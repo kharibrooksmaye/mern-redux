@@ -1,0 +1,86 @@
+import React from "react";
+import Drawer from "@mui/material/Drawer";
+import Toolbar from "@mui/material/Toolbar";
+import List from "@mui/material/List";
+import Divider from "@mui/material/Divider";
+import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import InboxIcon from "@mui/icons-material/MoveToInbox";
+import MailIcon from "@mui/icons-material/Mail";
+import { navbarItems } from "./Constants/navbarItems";
+import { NavLink, useNavigate } from "react-router-dom";
+import { AppBar, Box } from "@mui/material";
+import ResponsiveAppBar from "./ResponsiveAppbar";
+import RouterLink from "./RouterLink";
+import logo from "../assets/logo.svg";
+
+const Navbar = () => {
+  const activeStyle = {
+    backgroundColor: "primary.light",
+  };
+  const drawerWidth = 250;
+  const navigate = useNavigate();
+  const [open, setOpen] = React.useState(false);
+  return (
+    <Box>
+      <ResponsiveAppBar
+        drawerWidth={drawerWidth}
+        open={open}
+        setOpen={setOpen}
+      />
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            color: "primary.dark",
+          },
+        }}
+        variant="persistent"
+        anchor="left"
+        open
+        onClose={() => setOpen(false)}
+      >
+        <Toolbar>
+          <Box
+            component="img"
+            src={logo}
+            sx={{
+              height: "20px",
+              padding: "10px 10px",
+              cursor: "pointer",
+            }}
+            onClick={() => navigate("/")}
+          ></Box>
+        </Toolbar>
+        <Divider />
+        <List sx={{ padding: "0px 8px" }}>
+          {navbarItems.map((item) => (
+            <RouterLink
+              key={item.id}
+              to={item.route}
+              text={item.label}
+              icon={item.icon}
+            />
+          ))}
+        </List>
+        {/* <Divider />
+        <List>
+          {["All mail", "Trash", "Spam"].map((item, index) => (
+            <ListItem button key={item}>
+              <ListItemIcon>
+                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+              </ListItemIcon>
+              <ListItemText primary={item} />
+            </ListItem>
+          ))}
+        </List> */}
+      </Drawer>
+    </Box>
+  );
+};
+
+export default Navbar;
