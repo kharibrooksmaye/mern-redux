@@ -23,6 +23,7 @@ import Profile from "./Components/Profile";
 import Products from "./Components/Products";
 import Blog from "./Components/Blog";
 import Pricing from "./Components/Pricing";
+import Register from "./Components/Register";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
   let auth = useContext(authContext);
@@ -42,6 +43,7 @@ root.render(
           <Route path="/" element={<App />}>
             <Route path="/" element={<Home />} />
             <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
             <Route path="blog" element={<Blog />} />
             <Route path="products" element={<Products />} />
             <Route path="pricing" element={<Pricing />} />

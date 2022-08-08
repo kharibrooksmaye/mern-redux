@@ -17,13 +17,14 @@ import { authContext } from "../AuthContext";
 import { AuthContext } from "../context/AuthContext";
 import RouterLink from "./RouterLink";
 
-const Login = () => {
+const Register = () => {
   const { user, loggedIn, token, login } = useContext(AuthContext) as Auth;
   const navigate = useNavigate();
 
   interface UserProps {
     password?: string;
     username?: string;
+    email?: string;
     showPassword?: boolean;
   }
 
@@ -32,6 +33,7 @@ const Login = () => {
     {
       password: "",
       username: "",
+      email: "",
       showPassword: false,
     }
   );
@@ -52,12 +54,14 @@ const Login = () => {
     setError(false);
 
     try {
-      const { password, username } = formInput;
-      const { data } = await axios.post("http://localhost:5000/api/login", {
+      const { password, username, email } = formInput;
+      const { data } = await axios.post("http://localhost:5000/api/register", {
         username,
+        email,
         password,
       });
-      console.log(data);
+
+      data?.error && setError(data?.error);
       login(data);
       user?.id && navigate("/profile");
     } catch (error) {
@@ -73,9 +77,10 @@ const Login = () => {
         justifyContent: "center",
         alignItems: "center",
         height: "100vh",
+        width: "100%",
       }}
     >
-      <Grid item xs={12} md={12} lg={10}>
+      <Grid item xs={12} md={12} lg={12}>
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -84,16 +89,28 @@ const Login = () => {
             display: "flex",
             flexDirection: "column",
             textAlign: "left",
-            alignItems: "centeer",
+            alignItems: "center",
+            width: "100%",
           }}
         >
           <TextField
             margin="normal"
             variant="outlined"
-            label="Username or Email Address"
+            label="Username"
             size="small"
             type="text"
             name="username"
+            sx={{ width: "100%" }}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="normal"
+            variant="outlined"
+            label="Email Address"
+            size="small"
+            type="text"
+            name="email"
+            sx={{ width: "100%" }}
             onChange={handleChange}
           />
           <TextField
@@ -101,6 +118,7 @@ const Login = () => {
             variant="outlined"
             label="Password"
             size="small"
+            sx={{ width: "100%" }}
             type={formInput.showPassword ? "text" : "password"}
             name="password"
             onChange={handleChange}
@@ -125,21 +143,21 @@ const Login = () => {
           />
           <Button
             color="success"
-            sx={{ margin: "16px 0px", marginRight: "10px" }}
+            sx={{ margin: "16px 0px" }}
             variant="contained"
             fullWidth
             type="submit"
           >
-            Login
+            Register
           </Button>
         </Box>
         <p style={{ color: "red" }}>{error ? error : ""}</p>
         <Typography component="p">
-          Don't have an account? <Link to="/register"> Register here </Link>
+          Already have an account? <Link to="/login"> Login here </Link>
         </Typography>
       </Grid>
     </Box>
   );
 };
 
-export default Login;
+export default Register;
