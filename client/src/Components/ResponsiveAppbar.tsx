@@ -1,4 +1,3 @@
-import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -13,27 +12,8 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import logo from "../assets/logo.svg";
 import { useNavigate } from "react-router";
-
-const pages = [
-  {
-    label: "Products",
-    route: "products",
-  },
-  {
-    label: "Pricing",
-    route: "pricing",
-  },
-  {
-    label: "Blog",
-    route: "blog",
-  },
-];
-const settings = [
-  { label: "Profile", route: "profile" },
-  { label: "Account", route: "account" },
-  { label: "Dashboard", route: "dashboard" },
-  { label: "Logout", route: "logout" },
-];
+import { authContext } from "../AuthContext";
+import { useContext, useState, MouseEvent } from "react";
 
 const ResponsiveAppBar = ({
   setOpen,
@@ -44,19 +24,41 @@ const ResponsiveAppBar = ({
   setOpen: Function;
   drawerWidth: number;
 }) => {
+  const auth = useContext(authContext);
   const navigate = useNavigate();
 
-  const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
-    null
-  );
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null
-  );
+  const pages = [
+    { label: "Home", route: "" },
+    {
+      label: "Products",
+      route: "products",
+    },
+    {
+      label: "Pricing",
+      route: "pricing",
+    },
+    {
+      label: "Blog",
+      route: "blog",
+    },
+  ];
+  const settings =
+    auth?.user?.id && auth?.jwt
+      ? [
+          { label: "Profile", route: "profile" },
+          { label: "Account", route: "account" },
+          { label: "Dashboard", route: "dashboard" },
+          { label: "Logout", route: "logout" },
+        ]
+      : [{ label: "Login", route: "login" }];
 
-  const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
+  const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
+  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+
+  const handleOpenNavMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
   };
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+  const handleOpenUserMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
 
@@ -66,8 +68,14 @@ const ResponsiveAppBar = ({
   };
 
   const handleCloseUserMenu = (link: string) => {
-    navigate(link);
-    setAnchorElUser(null);
+    if (link === "logout") {
+      auth.signOut();
+      setAnchorElUser(null);
+      navigate("/");
+    } else {
+      navigate(link);
+      setAnchorElUser(null);
+    }
   };
 
   return (
@@ -82,16 +90,6 @@ const ResponsiveAppBar = ({
     >
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <Box
-            component="img"
-            src={logo}
-            sx={{
-              height: "20px",
-              padding: "10px 10px",
-              cursor: "pointer",
-            }}
-            onClick={() => navigate("/")}
-          ></Box>
           <Box
             sx={{
               flexGrow: 1,
