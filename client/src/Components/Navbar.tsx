@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import Drawer from "@mui/material/Drawer";
 import Toolbar from "@mui/material/Toolbar";
 import List from "@mui/material/List";
@@ -14,6 +14,8 @@ import { AppBar, Box } from "@mui/material";
 import ResponsiveAppBar from "./ResponsiveAppbar";
 import RouterLink from "./RouterLink";
 import logo from "../assets/logo.svg";
+import { AuthContext } from "../context/AuthContext";
+import { Auth } from "../@types/auth";
 
 const Navbar = () => {
   const activeStyle = {
@@ -22,6 +24,8 @@ const Navbar = () => {
   const drawerWidth = 250;
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
+  const {loggedIn, user} = useContext(AuthContext) as Auth;
+
   return (
     <Box>
       <ResponsiveAppBar

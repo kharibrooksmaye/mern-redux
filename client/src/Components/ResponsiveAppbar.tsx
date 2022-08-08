@@ -1,4 +1,4 @@
-import * as React from "react";
+
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -13,6 +13,9 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import logo from "../assets/logo.svg";
 import { useNavigate } from "react-router";
+import { AuthContext } from "../context/AuthContext";
+import { Auth } from "../@types/auth";
+import React, { useContext } from "react";
 
 const pages = [
   {
@@ -28,12 +31,7 @@ const pages = [
     route: "blog",
   },
 ];
-const settings = [
-  { label: "Profile", route: "profile" },
-  { label: "Account", route: "account" },
-  { label: "Dashboard", route: "dashboard" },
-  { label: "Logout", route: "logout" },
-];
+
 
 const ResponsiveAppBar = ({
   setOpen,
@@ -46,6 +44,13 @@ const ResponsiveAppBar = ({
 }) => {
   const navigate = useNavigate();
 
+  const { loggedIn } = React.useContext(AuthContext) as Auth;
+  const settings = [
+    { label: "Profile", route: "profile" },
+    { label: "Account", route: "account" },
+    { label: "Dashboard", route: "dashboard" },
+    { label: loggedIn ? "Logout": "Login", route: loggedIn ? "logout": "login" },
+  ];
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
     null
   );

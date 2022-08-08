@@ -10,6 +10,7 @@ import Settings from "./Pages/Settings/Settings";
 import { ThemeProvider } from "@mui/material";
 import { dashboardTheme } from "./dashboardTheme";
 import Home from "./Pages/Home/Home";
+import Login from "./Pages/Login/Login";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ThemeProvider theme={dashboardTheme}>
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="samples" element={<Samples />} />
           <Route path="organizations" element={<Organizations />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="login" element={<Login />} />
         </Route>
       </Routes>
     </BrowserRouter>
