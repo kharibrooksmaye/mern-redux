@@ -12,8 +12,9 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import logo from "../assets/logo.svg";
 import { useNavigate } from "react-router";
-import { authContext } from "../AuthContext";
-import { useContext, useState, MouseEvent } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { Auth } from "../@types/auth";
+import React from "react";
 
 const ResponsiveAppBar = ({
   setOpen,
@@ -24,7 +25,7 @@ const ResponsiveAppBar = ({
   setOpen: Function;
   drawerWidth: number;
 }) => {
-  const auth = useContext(authContext);
+  const { loggedIn, logout } = React.useContext(AuthContext) as Auth;
   const navigate = useNavigate();
 
   const pages = [
@@ -42,18 +43,22 @@ const ResponsiveAppBar = ({
       route: "blog",
     },
   ];
-  const settings =
-    auth?.user?.id && auth?.jwt
-      ? [
-          { label: "Profile", route: "profile" },
-          { label: "Account", route: "account" },
-          { label: "Dashboard", route: "dashboard" },
-          { label: "Logout", route: "logout" },
-        ]
-      : [{ label: "Login", route: "login" }];
 
-  const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
-  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+  const settings = loggedIn
+    ? [
+        { label: "Profile", route: "profile" },
+        { label: "Account", route: "account" },
+        { label: "Dashboard", route: "dashboard" },
+        { label: "Logout", route: "logout" },
+      ]
+    : [{ label: "Login", route: "login" }];
+
+  const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
+    null
+  );
+  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
+    null
+  );
 
   const handleOpenNavMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -69,7 +74,7 @@ const ResponsiveAppBar = ({
 
   const handleCloseUserMenu = (link: string) => {
     if (link === "logout") {
-      auth.signOut();
+      logout();
       setAnchorElUser(null);
       navigate("/");
     } else {
