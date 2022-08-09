@@ -57,9 +57,9 @@ const Login = () => {
         username,
         password,
       });
-      console.log(data);
       login(data);
-      user?.id && navigate("/profile");
+      console.log(user?._id)
+      user?._id && navigate("/profile");
     } catch (error) {
       console.log(error);
     }

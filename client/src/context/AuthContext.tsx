@@ -2,10 +2,12 @@ import { min } from "moment";
 import { createContext, FC, ReactNode, useState } from "react";
 import { Auth } from "../@types/auth";
 import { User } from "../@types/user";
+import { useNavigate } from "react-router";
 
 export const AuthContext = createContext<Auth | null >(null);
 
-const AuthProvider: FC<ReactNode> = ({children} : {children: ReactNode}) => {
+const AuthProvider = ({children} : {children: ReactNode}) => {
+    const navigate = useNavigate();
     const [user, setUser] = useState<User>(null);
     const [token, setToken] = useState<Auth['token']>(null);
     const [loggedIn, setLoggedIn] = useState<Auth['loggedIn']>(false)
@@ -13,6 +15,7 @@ const AuthProvider: FC<ReactNode> = ({children} : {children: ReactNode}) => {
         setUser(user);
         setToken(token)
         setLoggedIn(true)
+        user?._id && token && navigate('/')
     }
 
     const logout = () => {
