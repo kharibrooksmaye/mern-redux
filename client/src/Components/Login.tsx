@@ -9,18 +9,28 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import React, { useContext, useReducer, useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useContext, useMemo, useReducer, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { Link } from "react-router-dom";
 import { Auth } from "../@types/auth";
-import { authContext } from "../AuthContext";
 import { AuthContext } from "../context/AuthContext";
 import RouterLink from "./RouterLink";
 
 const Login = () => {
   const { user, loggedIn, token, login } = useContext(AuthContext) as Auth;
   const navigate = useNavigate();
+  const location = useLocation();
 
+  const navigatePathname = useMemo(() => {
+    const state = location.state as { from: string };
+
+    if (state && state.from) {
+      console.log(state.from);
+      return state.from;
+    }
+
+    return "/";
+  }, [location]);
   interface UserProps {
     password?: string;
     username?: string;
@@ -57,9 +67,9 @@ const Login = () => {
         username,
         password,
       });
+
+      console.log(data);
       login(data);
-      console.log(user?._id)
-      user?._id && navigate("/profile");
     } catch (error) {
       console.log(error);
     }

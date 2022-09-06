@@ -199,6 +199,7 @@ router.post("/checking", (req, res) => {
 router.post("/register", (req, res) => {
   const { username, password, email } = req.body;
 
+  console.log(username, password, email);
   bcrypt.hash(password, hashRounds).then((hashedPassword) => {
     const newUser = new User({
       username,
@@ -366,25 +367,6 @@ router.post("/login", (req, res) => {
             res.status(403).send({
               err: "User name or password is incorrect",
               token: null,
-            });
-          } else if (user["2fa"]) {
-            const token = jwt.sign(
-              {
-                user: user._id,
-                authContact:
-                  user.authMethod === "sms" ? user.phoneNumber : user.email,
-                authMethod: user.authMethod,
-                authorized: !user["2fa"],
-              },
-              "testing out a secret",
-              {
-                expiresIn: 129600,
-              }
-            );
-            res.json({
-              err: null,
-              token,
-              "2fa": user["2fa"],
             });
           } else {
             const token = jwt.sign(

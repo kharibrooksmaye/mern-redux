@@ -18,17 +18,19 @@ import { ThemeProvider } from "@mui/material";
 import { dashboardTheme } from "./dashboardTheme";
 import Home from "./Pages/Home/Home";
 import Login from "./Components/Login";
-import { Auth, authContext } from "./AuthContext";
+import AuthProvider, { AuthContext } from "./context/AuthContext";
 import Profile from "./Components/Profile";
 import Products from "./Components/Products";
 import Blog from "./Components/Blog";
 import Pricing from "./Components/Pricing";
 import Register from "./Components/Register";
+import { Auth } from "./@types/auth";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
-  let auth = useContext(authContext);
+  const {user, token} = useContext(AuthContext) as Auth;
 
-  return auth?.user?.id && auth?.jwt ? (
+
+  return user && token ? (
     children || <Outlet />
   ) : (
     <Navigate to={{ pathname: "/login" }} state={{ from: location }} />
@@ -37,8 +39,9 @@ const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
   <ThemeProvider theme={dashboardTheme}>
-    <Auth>
+    
       <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<App />}>
             <Route path="/" element={<Home />} />
@@ -57,7 +60,8 @@ root.render(
             </Route>
           </Route>
         </Routes>
+        </AuthProvider>
       </BrowserRouter>
-    </Auth>
+    
   </ThemeProvider>
 );

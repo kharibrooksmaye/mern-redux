@@ -13,9 +13,7 @@ import React, { useContext, useReducer, useState } from "react";
 import { useNavigate } from "react-router";
 import { Link } from "react-router-dom";
 import { Auth } from "../@types/auth";
-import { authContext } from "../AuthContext";
 import { AuthContext } from "../context/AuthContext";
-import RouterLink from "./RouterLink";
 
 const Register = () => {
   const { user, loggedIn, token, login } = useContext(AuthContext) as Auth;
@@ -63,7 +61,7 @@ const Register = () => {
 
       data?.error && setError(data?.error);
       login(data);
-      user?.id && navigate("/profile");
+      user?._id && navigate("/profile");
     } catch (error) {
       console.log(error);
     }
