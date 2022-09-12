@@ -18,9 +18,6 @@ import { AuthContext } from "../context/AuthContext";
 import { Auth } from "../@types/auth";
 
 const Navbar = () => {
-  const activeStyle = {
-    backgroundColor: "primary.light",
-  };
   const drawerWidth = 250;
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);

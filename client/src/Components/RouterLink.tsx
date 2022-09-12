@@ -23,9 +23,12 @@ const RouterLink = (props: RouterLinkProps) => {
               ref={ref}
               to={props.to}
               end
-              className={({ isActive }) =>
-                isActive ? elementClasses + " Mui-selected" : elementClasses
-              }
+              className={({ isActive }) => {
+                console.log(isActive);
+                return isActive
+                  ? elementClasses + " Mui-selected"
+                  : elementClasses;
+              }}
             />
           );
         }
@@ -33,20 +36,23 @@ const RouterLink = (props: RouterLinkProps) => {
     [props.to]
   );
 
+  const strippedPathname = location.pathname.replace("/", "");
+  const activeLink = props.to === strippedPathname;
+  console.log(strippedPathname, props.to);
   return (
     <ListItemButton
       sx={{
-        "&.Mui-selected": {
-          backgroundColor: "primary.main",
-        },
-        borderRadius: "8px",
         margin: "5px 0px",
+        fontWeight: "700",
+        backgroundColor: activeLink ? "transparent !important" : "inherit",
+        borderRight: `5px solid ${activeLink ? "blue" : "transparent"}`,
         "&:hover": {
           backgroundColor: "#eee",
         },
       }}
       component={MyNavLink}
       disableRipple
+      selected={props.to === location.pathname}
     >
       <ListItemIcon
         sx={{
@@ -56,7 +62,15 @@ const RouterLink = (props: RouterLinkProps) => {
       >
         {props.icon}
       </ListItemIcon>
-      <ListItemText primary={props.text} />
+      <ListItemText
+        primaryTypographyProps={{
+          fontWeight:
+            props.to === strippedPathname
+              ? "fontWeightBold"
+              : "fontWeightRegular",
+        }}
+        primary={props.text}
+      />
     </ListItemButton>
   );
 };
