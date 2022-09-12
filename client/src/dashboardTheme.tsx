@@ -8,7 +8,8 @@ const colors = {
   color5: "#1FCECB",
 };
 
-const font = "'Varela Round', sans-serif";
+const font = "'DM Sans', 'Poppins', sans-serif";
+const logoFont = "'Poppins', sans-serif";
 export const dashboardTheme = createTheme({
   palette: {
     primary: {

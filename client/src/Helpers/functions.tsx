@@ -1,8 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-
+import { User } from "../@types/user";
 export const useFetch = (url: string) => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState("");
 

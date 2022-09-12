@@ -197,7 +197,7 @@ router.post("/checking", (req, res) => {
 });
 
 router.post("/register", (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, password, email, firstName, lastName, age } = req.body;
 
   console.log(username, password, email);
   bcrypt.hash(password, hashRounds).then((hashedPassword) => {
@@ -205,6 +205,9 @@ router.post("/register", (req, res) => {
       username,
       password: hashedPassword,
       email,
+      firstName,
+      lastName,
+      age,
     });
 
     User.findOne({

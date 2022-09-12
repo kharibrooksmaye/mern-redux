@@ -15,6 +15,15 @@ import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
 import { Auth } from "../@types/auth";
 import React from "react";
+import { InputAdornment, Paper, styled, TextField } from "@mui/material";
+import {
+  BedtimeOutlined,
+  InfoOutlined,
+  Notifications,
+  NotificationsOutlined,
+  Search,
+} from "@mui/icons-material";
+import { InputUnstyled, InputUnstyledProps } from "@mui/base";
 
 const ResponsiveAppBar = ({
   setOpen,
@@ -83,6 +92,57 @@ const ResponsiveAppBar = ({
     }
   };
 
+  const StyledInputRoot = styled("div")(
+    ({ theme }) => `
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 30px;
+    background-color: #F4F7FE;
+    background: #F4F7FE;
+    `
+  );
+
+  const StyledInput = styled("input")(
+    ({ theme }) => `
+    background-color: #F4F7FE;
+    background: #F4F7FE;
+    border: none;
+    border-radius: 30px;
+    height: 41px;
+    padding: 0 10px;
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    outline: none;
+    `
+  );
+
+  const InputAdornment = styled("div")`
+    margin: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  const CustomInput = React.forwardRef(function CustomInput(
+    props: InputUnstyledProps,
+    ref: React.ForwardedRef<HTMLDivElement>
+  ) {
+    const { components, ...other } = props;
+    return (
+      <InputUnstyled
+        components={{
+          Root: StyledInputRoot,
+          Input: StyledInput,
+          ...components,
+        }}
+        {...other}
+        ref={ref}
+      />
+    );
+  });
+
   return (
     <AppBar
       position="static"
@@ -113,7 +173,7 @@ const ResponsiveAppBar = ({
             </IconButton>
           </Box>
 
-          <Box
+          {/* <Box
             sx={{
               flexGrow: 1,
               marginLeft: "20px",
@@ -140,39 +200,86 @@ const ResponsiveAppBar = ({
                 {page.label}
               </Button>
             ))}
-          </Box>
-
-          <Box sx={{ flexGrow: 0 }}>
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: "45px" }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
+          </Box> */}
+          <Box
+            sx={{
+              marginTop: "16px",
+              flexGrow: 1,
+              justifyContent: "flex-end",
+              display: "flex",
+              "& > * + *": { ml: 1 },
+            }}
+          >
+            <Paper
+              elevation={3}
+              sx={{
+                borderRadius: "30px",
+                border: "0px solid black",
+                outline: "none",
+                borderColor: "transparent",
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                padding: "10px",
+                "& > * + *": { ml: 1 },
               }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem
-                  key={setting.label}
-                  onClick={() => handleCloseUserMenu(setting.route)}
+              <CustomInput
+                type="text"
+                placeholder="Search"
+                startAdornment={
+                  <InputAdornment>
+                    <Search />
+                  </InputAdornment>
+                }
+              />
+              <IconButton>
+                <NotificationsOutlined fontSize="small" />
+              </IconButton>
+              <IconButton>
+                <BedtimeOutlined fontSize="small" />
+              </IconButton>
+              <IconButton>
+                <InfoOutlined fontSize="small" />
+              </IconButton>
+              <Box sx={{ flexGrow: 0 }}>
+                <Tooltip title="Open settings">
+                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                    <Avatar
+                      alt="Remy Sharp"
+                      src="/static/images/avatar/2.jpg"
+                    />
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  sx={{ mt: "45px" }}
+                  id="menu-appbar"
+                  anchorEl={anchorElUser}
+                  anchorOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  keepMounted
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  open={Boolean(anchorElUser)}
+                  onClose={handleCloseUserMenu}
                 >
-                  <Typography textAlign="center">{setting.label}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
+                  {settings.map((setting) => (
+                    <MenuItem
+                      key={setting.label}
+                      onClick={() => handleCloseUserMenu(setting.route)}
+                    >
+                      <Typography textAlign="center">
+                        {setting.label}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </Box>
+            </Paper>
           </Box>
         </Toolbar>
       </Container>

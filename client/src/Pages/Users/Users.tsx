@@ -1,7 +1,16 @@
-import { Box, Button, Card, Modal, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  Grid,
+  Modal,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { DataGrid, GridValueGetterParams } from "@mui/x-data-grid";
 import axios from "axios";
 import React, { useReducer, useState } from "react";
+import { User } from "../../@types/user";
 import { userRows } from "../../Components/Constants/userRows";
 import { useFetch } from "../../Helpers/functions";
 const Users = () => {
@@ -32,14 +41,22 @@ const Users = () => {
     { field: "samples", headerName: "# of Samples", width: 150 },
   ];
   const { data, isLoading, error } = useFetch(
-    "http://localhost:1337/api/users?populate=*"
+    "http://localhost:5000/api/admin/users"
   );
 
+  const mappedData = data.map((d) => {
+    const newData = d as User;
+    if (d && newData) {
+      newData.id = d._id;
+    }
+    return newData;
+  });
   interface UserProps {
     firstName?: string;
     lastName?: string;
     username?: string;
     password?: string;
+    confirmPassword?: string;
     age?: number;
     organization?: string;
     email?: string;
@@ -52,6 +69,7 @@ const Users = () => {
       lastName: "",
       username: "",
       password: "",
+      confirmPassword: "",
       age: undefined,
       organization: "",
       email: "",
@@ -65,14 +83,10 @@ const Users = () => {
     evt.preventDefault();
     try {
       console.log(formInput);
-      const { username, password, email } = formInput;
+      const { confirmPassword, ...data } = formInput;
       const result = await axios.post(
-        "http://localhost:1337/auth/local/register",
-        {
-          username,
-          password,
-          email,
-        }
+        "http://localhost:5000/api/register",
+        data
       );
       console.log(result);
     } catch (error) {
@@ -84,36 +98,49 @@ const Users = () => {
       name: "firstName",
       label: "First Name",
       type: "text",
+      size: 6,
     },
     {
       name: "lastName",
       label: "Last Name",
       type: "text",
+      size: 6,
     },
     {
       name: "email",
       label: "Email Address",
       type: "email",
+      size: 12,
     },
     {
       name: "username",
       label: "Username",
       type: "string",
+      size: 12,
     },
     {
       name: "password",
       label: "Password",
       type: "password",
+      size: 12,
+    },
+    {
+      name: "confirmPassword",
+      label: "Confirm Password",
+      type: "password",
+      size: 12,
     },
     {
       name: "age",
       label: "Age",
       type: "number",
+      size: 4,
     },
     {
       name: "organization",
       label: "Organization",
       type: "text",
+      size: 8,
     },
   ];
 
@@ -143,28 +170,37 @@ const Users = () => {
             Add New User
           </Typography>
           <Box component="form" sx={{ m: 2 }} onSubmit={handleSubmit}>
-            {inputs.map(({ name, type, label }) => (
-              <TextField
-                key={name}
-                sx={{ marginBottom: "10px" }}
-                variant="outlined"
-                type={type}
-                label={label}
-                name={name}
-                onChange={handleChange}
-              />
-            ))}
-            <Button
-              sx={{ m: 3 }}
-              type="submit"
-              variant="contained"
-              color="primary"
-            >
-              Add User
-            </Button>
+            <Grid container spacing={2}>
+              {inputs.map(({ name, type, label, size }) => (
+                <Grid item xs={size}>
+                  <TextField
+                    key={name}
+                    sx={{ margin: "5px" }}
+                    size="small"
+                    variant="outlined"
+                    type={type}
+                    label={label}
+                    fullWidth
+                    name={name}
+                    onChange={handleChange}
+                  />
+                </Grid>
+              ))}
+              <Button
+                sx={{ m: 3 }}
+                type="submit"
+                variant="contained"
+                color="primary"
+              >
+                Add User
+              </Button>
+            </Grid>
           </Box>
         </Box>
       </Modal>
+      <Typography marginBottom="20px" variant="h3">
+        Users
+      </Typography>
       <DataGrid
         autoHeight
         columns={columns}

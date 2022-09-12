@@ -10,7 +10,7 @@ import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import { navbarItems } from "./Constants/navbarItems";
 import { NavLink, useNavigate } from "react-router-dom";
-import { AppBar, Box } from "@mui/material";
+import { AppBar, Box, Typography } from "@mui/material";
 import ResponsiveAppBar from "./ResponsiveAppbar";
 import RouterLink from "./RouterLink";
 import logo from "../assets/logo.svg";
@@ -24,7 +24,7 @@ const Navbar = () => {
   const drawerWidth = 250;
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
-  const {loggedIn, user} = useContext(AuthContext) as Auth;
+  const { loggedIn, user } = useContext(AuthContext) as Auth;
 
   return (
     <Box>
@@ -50,15 +50,20 @@ const Navbar = () => {
       >
         <Toolbar>
           <Box
-            component="img"
-            src={logo}
             sx={{
-              height: "20px",
               padding: "10px 10px",
               cursor: "pointer",
+              display: "inline-flex",
             }}
             onClick={() => navigate("/")}
-          ></Box>
+          >
+            <Typography fontWeight={900} textTransform="uppercase" variant="h5">
+              Horizon
+            </Typography>
+            <Typography fontWeight={300} textTransform="uppercase" variant="h5">
+              FREE
+            </Typography>
+          </Box>
         </Toolbar>
         <Divider />
         <List sx={{ padding: "0px 8px" }}>
