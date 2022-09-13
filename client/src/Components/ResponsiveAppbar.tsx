@@ -15,7 +15,14 @@ import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
 import { Auth } from "../@types/auth";
 import React from "react";
-import { InputAdornment, Paper, styled, TextField } from "@mui/material";
+import {
+  Breadcrumbs,
+  InputAdornment,
+  Link,
+  Paper,
+  styled,
+  TextField,
+} from "@mui/material";
 import {
   BedtimeOutlined,
   InfoOutlined,
@@ -143,37 +150,65 @@ const ResponsiveAppBar = ({
     );
   });
 
+  const pathname = location.pathname.replace("/", "");
+  const currentPage = `${pathname.charAt(0).toUpperCase()}${pathname.slice(1)}`;
+  console.log(currentPage);
   return (
     <AppBar
       position="static"
       sx={{
         backgroundColor: "transparent",
         boxShadow: "none",
-        marginLeft: `${drawerWidth}px`,
-        width: `calc(100% - ${drawerWidth}px)`,
+        marginBottom: "20px",
       }}
     >
-      <Container maxWidth="xl">
-        <Toolbar disableGutters>
-          <Box
-            sx={{
-              flexGrow: 1,
-              display: { xs: "flex", md: "none" },
-            }}
+      <Toolbar sx={{ marginTop: "16px" }}>
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: { xs: "flex", md: "none" },
+          }}
+        >
+          <IconButton
+            size="large"
+            aria-label="account of current user"
+            aria-controls="menu-appbar"
+            aria-haspopup="true"
+            onClick={() => setOpen(true)}
+            color="primary"
           >
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={() => setOpen(true)}
-              color="primary"
-            >
-              <MenuIcon />
-            </IconButton>
+            <MenuIcon />
+          </IconButton>
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "flex-start",
+          }}
+        >
+          <Box sx={{ flexDirection: "column", display: "flex" }}>
+            <Breadcrumbs>
+              <Link underline="hover" color="GrayText" href="/">
+                Home
+              </Link>
+              {location.pathname !== "/" && (
+                <Link
+                  underline="none"
+                  color="primary.dark"
+                  href={location.pathname}
+                >
+                  {currentPage}
+                </Link>
+              )}
+            </Breadcrumbs>
+            <Typography variant="h4" fontWeight={700}>
+              NFT Marketplace
+            </Typography>
           </Box>
+        </Box>
 
-          {/* <Box
+        {/* <Box
             sx={{
               flexGrow: 1,
               marginLeft: "20px",
@@ -201,88 +236,81 @@ const ResponsiveAppBar = ({
               </Button>
             ))}
           </Box> */}
-          <Box
+        <Box
+          sx={{
+            flexGrow: 1,
+            justifyContent: "flex-end",
+            display: "flex",
+            "& > * + *": { ml: 1 },
+          }}
+        >
+          <Paper
+            elevation={3}
             sx={{
-              marginTop: "16px",
-              flexGrow: 1,
-              justifyContent: "flex-end",
+              borderRadius: "30px",
+              border: "0px solid black",
+              outline: "none",
+              borderColor: "transparent",
               display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              padding: "10px",
               "& > * + *": { ml: 1 },
             }}
           >
-            <Paper
-              elevation={3}
-              sx={{
-                borderRadius: "30px",
-                border: "0px solid black",
-                outline: "none",
-                borderColor: "transparent",
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                padding: "10px",
-                "& > * + *": { ml: 1 },
-              }}
-            >
-              <CustomInput
-                type="text"
-                placeholder="Search"
-                startAdornment={
-                  <InputAdornment>
-                    <Search />
-                  </InputAdornment>
-                }
-              />
-              <IconButton>
-                <NotificationsOutlined fontSize="small" />
-              </IconButton>
-              <IconButton>
-                <BedtimeOutlined fontSize="small" />
-              </IconButton>
-              <IconButton>
-                <InfoOutlined fontSize="small" />
-              </IconButton>
-              <Box sx={{ flexGrow: 0 }}>
-                <Tooltip title="Open settings">
-                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                    <Avatar
-                      alt="Remy Sharp"
-                      src="/static/images/avatar/2.jpg"
-                    />
-                  </IconButton>
-                </Tooltip>
-                <Menu
-                  sx={{ mt: "45px" }}
-                  id="menu-appbar"
-                  anchorEl={anchorElUser}
-                  anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                  }}
-                  keepMounted
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                  }}
-                  open={Boolean(anchorElUser)}
-                  onClose={handleCloseUserMenu}
-                >
-                  {settings.map((setting) => (
-                    <MenuItem
-                      key={setting.label}
-                      onClick={() => handleCloseUserMenu(setting.route)}
-                    >
-                      <Typography textAlign="center">
-                        {setting.label}
-                      </Typography>
-                    </MenuItem>
-                  ))}
-                </Menu>
-              </Box>
-            </Paper>
-          </Box>
-        </Toolbar>
-      </Container>
+            <CustomInput
+              type="text"
+              placeholder="Search"
+              startAdornment={
+                <InputAdornment>
+                  <Search />
+                </InputAdornment>
+              }
+            />
+            <IconButton>
+              <NotificationsOutlined fontSize="small" />
+            </IconButton>
+            <IconButton>
+              <BedtimeOutlined fontSize="small" />
+            </IconButton>
+            <IconButton>
+              <InfoOutlined fontSize="small" />
+            </IconButton>
+            <Box sx={{ flexGrow: 0 }}>
+              <Tooltip title="Open settings">
+                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                  <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                sx={{ mt: "45px" }}
+                id="menu-appbar"
+                anchorEl={anchorElUser}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                open={Boolean(anchorElUser)}
+                onClose={handleCloseUserMenu}
+              >
+                {settings.map((setting) => (
+                  <MenuItem
+                    key={setting.label}
+                    onClick={() => handleCloseUserMenu(setting.route)}
+                  >
+                    <Typography textAlign="center">{setting.label}</Typography>
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
+          </Paper>
+        </Box>
+      </Toolbar>
     </AppBar>
   );
 };

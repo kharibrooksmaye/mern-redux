@@ -38,6 +38,7 @@ const Navbar = () => {
             width: drawerWidth,
             boxSizing: "border-box",
             color: "primary.dark",
+            border: "none",
           },
         }}
         variant="persistent"
@@ -51,19 +52,21 @@ const Navbar = () => {
               padding: "10px 10px",
               cursor: "pointer",
               display: "inline-flex",
+              height: "130px",
+              alignItems: "center",
             }}
             onClick={() => navigate("/")}
           >
-            <Typography fontWeight={900} textTransform="uppercase" variant="h5">
+            <Typography fontWeight="700" textTransform="uppercase" variant="h5">
               Horizon
             </Typography>
-            <Typography fontWeight={300} textTransform="uppercase" variant="h5">
+            <Typography fontWeight="300" textTransform="uppercase" variant="h5">
               FREE
             </Typography>
           </Box>
         </Toolbar>
         <Divider />
-        <List sx={{ padding: "0px 8px" }}>
+        <List>
           {navbarItems.map((item) => (
             <RouterLink
               key={item.id}

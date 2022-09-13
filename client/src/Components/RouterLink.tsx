@@ -1,4 +1,10 @@
-import { ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import {
+  Box,
+  Divider,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 import React, { ReactNode } from "react";
 import { NavLink, NavLinkProps } from "react-router-dom";
 
@@ -40,38 +46,52 @@ const RouterLink = (props: RouterLinkProps) => {
   const activeLink = props.to === strippedPathname;
   console.log(strippedPathname, props.to);
   return (
-    <ListItemButton
-      sx={{
-        margin: "5px 0px",
-        fontWeight: "700",
-        backgroundColor: activeLink ? "transparent !important" : "inherit",
-        borderRight: `5px solid ${activeLink ? "blue" : "transparent"}`,
-        "&:hover": {
-          backgroundColor: "#eee",
-        },
-      }}
-      component={MyNavLink}
-      disableRipple
-      selected={props.to === location.pathname}
-    >
-      <ListItemIcon
+    <Box sx={{ display: "flex" }}>
+      <ListItemButton
         sx={{
-          ".Mui-selected > &": { color: "primary.dark" },
-          color: "#bbb",
+          margin: "5px 0px",
+          fontWeight: "700",
+          backgroundColor: activeLink ? "transparent !important" : "inherit",
+
+          "&:hover": {
+            backgroundColor: "#eee",
+          },
         }}
+        component={MyNavLink}
+        disableRipple
+        selected={props.to === location.pathname}
       >
-        {props.icon}
-      </ListItemIcon>
-      <ListItemText
-        primaryTypographyProps={{
-          fontWeight:
-            props.to === strippedPathname
-              ? "fontWeightBold"
-              : "fontWeightRegular",
-        }}
-        primary={props.text}
-      />
-    </ListItemButton>
+        <ListItemIcon
+          sx={{
+            ".Mui-selected > &": { color: "primary.dark" },
+            color: "#bbb",
+          }}
+        >
+          {props.icon}
+        </ListItemIcon>
+        <ListItemText
+          primaryTypographyProps={{
+            fontWeight:
+              props.to === strippedPathname
+                ? "fontWeightBold"
+                : "fontWeightRegular",
+          }}
+          primary={props.text}
+        />
+      </ListItemButton>
+      {activeLink && (
+        <Divider
+          orientation="vertical"
+          sx={{
+            borderWidth: "3px",
+            borderRadius: "3px",
+            borderColor: "primary.dark",
+            margin: "revert",
+          }}
+          flexItem
+        />
+      )}
+    </Box>
   );
 };
 
