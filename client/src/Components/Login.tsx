@@ -147,6 +147,10 @@ const Login = () => {
         <Typography component="p">
           Don't have an account? <Link to="/register"> Register here </Link>
         </Typography>
+        <Typography component="p">
+          Forgot your password?{" "}
+          <Link to="/recover"> Recover password here </Link>
+        </Typography>
       </Grid>
     </Box>
   );

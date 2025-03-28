@@ -20,6 +20,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Auth } from "../@types/auth";
 import { User } from "../@types/user";
 import { AuthContext } from "../context/AuthContext";
+import axios from "axios";
 
 interface FormElements extends HTMLFormControlsCollection {
   usernameInput: HTMLInputElement;
@@ -40,17 +41,27 @@ const Profile = () => {
 
   const [localUser, setLocalUser] = useState(user);
   const [hover, setHover] = useState(false);
-  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [edit, setEdit] = useState(false);
 
   const disabled = JSON.stringify(user) === JSON.stringify(localUser);
-  console.log(user);
+  console.log(user, localUser);
 
-  const handleSubmit = (e: React.FormEvent<FormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<FormElement>) => {
     e.preventDefault();
+    const newUser = { ...localUser };
+    try {
+      const { data } = await axios.put(
+        `http://localhost:5000/api/users/${user?._id}`,
+        newUser
+      );
+      console.log(data);
+      if (data.user) setUser(data.user);
+    } catch (error) {
+      console.log(error);
+    }
   };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { type } = e.target;
-    console.log("changing values");
     if (localUser) {
       if (type === "checkbox") {
         const { value, name, checked } = e.target;
@@ -63,14 +74,11 @@ const Profile = () => {
         console.log(value);
         const newUser = { ...localUser };
         (newUser as any)[name] = value;
+        console.log(newUser);
         setLocalUser(newUser);
       }
     }
   };
-
-  useEffect(() => {
-    console.log("changing values");
-  }, [localUser]);
 
   return (
     <Grid display="flex" container flexDirection="column">
@@ -87,7 +95,8 @@ const Profile = () => {
                 }}
                 onMouseEnter={() => setHover(true)}
                 onMouseLeave={() => setHover(false)}
-                onClick={() => setOpenEditDialog(true)}
+                onClick={() => setEdit(true)}
+                alt={user?._id}
               >
                 <Edit sx={{ display: hover ? "flex" : "none" }} />
                 {!hover && user?.firstName}
@@ -102,14 +111,52 @@ const Profile = () => {
               item
               xs="auto"
             >
-              <Typography variant="body1">{`${user?.firstName} ${user?.lastName}`}</Typography>
-              <Typography
-                sx={{ fontStyle: "italic" }}
-                variant="body2"
-                color="GrayText"
-              >
-                {user?._id}
-              </Typography>
+              {edit ? (
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <TextField
+                    name="firstName"
+                    size="small"
+                    variant="outlined"
+                    type="text"
+                    label="First Name"
+                    id="firstNameInput"
+                    margin="normal"
+                    defaultValue={localUser?.firstName}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ marginRight: "10px" }}
+                    onChange={handleChange}
+                  />
+                  <TextField
+                    name="lastName"
+                    size="small"
+                    variant="outlined"
+                    type="text"
+                    label="Last Name"
+                    id="lastNameInput"
+                    margin="normal"
+                    defaultValue={localUser?.lastName}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ marginRight: "10px" }}
+                    onChange={handleChange}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      setEdit(false);
+                    }}
+                    sx={{
+                      "&:hover": {
+                        cursor: "pointer",
+                      },
+                      marginTop: "16px",
+                    }}
+                  >
+                    <Check />
+                  </Button>
+                </Box>
+              ) : (
+                <Typography variant="body1">{`${localUser?.firstName} ${localUser?.lastName}`}</Typography>
+              )}
             </Grid>
           </Grid>
           <Box component="form" onSubmit={handleSubmit}>
@@ -165,7 +212,16 @@ const Profile = () => {
                       </FormControl>
                     );
                   }
-                  if (["password", "records", "_id", "__v"].includes(field))
+                  if (
+                    [
+                      "password",
+                      "records",
+                      "_id",
+                      "__v",
+                      "firstName",
+                      "lastName",
+                    ].includes(field)
+                  )
                     return;
                   return (
                     <TextField

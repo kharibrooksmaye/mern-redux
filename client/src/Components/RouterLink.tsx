@@ -54,7 +54,8 @@ const RouterLink = (props: RouterLinkProps) => {
           backgroundColor: activeLink ? "transparent !important" : "inherit",
 
           "&:hover": {
-            backgroundColor: "#eee",
+            backgroundColor: "transparent",
+            fontWeight: "fontWeightBold",
           },
         }}
         component={MyNavLink}

@@ -196,11 +196,13 @@ router.post("/checking", (req, res) => {
   });
 });
 
-router.post("/register", (req, res) => {
+router.post("/register", async (req, res) => {
   const { username, password, email, firstName, lastName, age } = req.body;
 
   console.log(username, password, email);
-  bcrypt.hash(password, hashRounds).then((hashedPassword) => {
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, hashRounds);
     const newUser = new User({
       username,
       password: hashedPassword,
@@ -209,46 +211,36 @@ router.post("/register", (req, res) => {
       lastName,
       age,
     });
-
-    User.findOne({
-      $or: [{ username }, { email }],
-    })
-      .then(async (user) => {
-        console.log(user);
-        if (user) {
-          res.send({
-            error:
-              "A user already exists with these credentials. Please login or choose a different email address or username",
-          });
-        } else {
-          try {
-            const registeredUser = await newUser.save();
-            const tokenUser = createTokenFromUser(registeredUser);
-            const token = jwt.sign(
-              { tokenUser, authorized: true },
-              "testing out a secret",
-              {
-                expiresIn: 129600,
-              }
-            );
-            console.log(token);
-            console.log("working");
-            res.send({
-              err: null,
-              token,
-              "2fa": false,
-            });
-          } catch (err) {
-            console.log(err);
-            console.log("error 1");
-            res.status(400).send(err);
-          }
+    const user = await User.findOne({ $or: [{ username }, { email }] });
+    if (user) {
+      res.send({
+        error:
+          "A user already exists with these credentials. Please login or choose a different email address or username",
+      });
+    } else {
+      console.log("creating user");
+      const registeredUser = await newUser.save();
+      console.log(registeredUser);
+      const tokenUser = createTokenFromUser(registeredUser);
+      const token = jwt.sign(
+        { tokenUser, authorized: true },
+        "testing out a secret",
+        {
+          expiresIn: 129600,
         }
-      })
-      .catch(() =>
-        res.status(res.statusCode).send({ error: "Error, user already exists" })
       );
-  });
+      console.log(token);
+      console.log("working");
+      res.send({
+        err: null,
+        token,
+        "2fa": false,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(res.statusCode).send({ error: "Error, user already exists" });
+  }
 });
 
 router.post("/create", async (req, res) => {

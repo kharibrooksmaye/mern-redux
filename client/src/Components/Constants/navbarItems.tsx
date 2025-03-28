@@ -2,6 +2,7 @@ import GroupIcon from "@mui/icons-material/Group";
 import BiotechIcon from "@mui/icons-material/Biotech";
 import CorporateFareIcon from "@mui/icons-material/CorporateFare";
 import SettingsIcon from "@mui/icons-material/Settings";
+import ProfileIcon from "@mui/icons-material/AccountCircle";
 
 export const navbarItems = [
   {
@@ -27,5 +28,11 @@ export const navbarItems = [
     icon: <SettingsIcon />,
     label: "Settings",
     route: "settings",
+  },
+  {
+    id: 4,
+    icon: <ProfileIcon />,
+    label: "Profile",
+    route: "profile",
   },
 ];
