@@ -30,7 +30,6 @@ const RouterLink = (props: RouterLinkProps) => {
               to={props.to}
               end
               className={({ isActive }) => {
-                console.log(isActive);
                 return isActive
                   ? elementClasses + " Mui-selected"
                   : elementClasses;
@@ -44,7 +43,6 @@ const RouterLink = (props: RouterLinkProps) => {
 
   const strippedPathname = location.pathname.replace("/", "");
   const activeLink = props.to === strippedPathname;
-  console.log(strippedPathname, props.to);
   return (
     <Box sx={{ display: "flex" }}>
       <ListItemButton

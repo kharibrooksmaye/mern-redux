@@ -347,46 +347,47 @@ router.get("/activate", async (req, res) => {
     console.log(error);
   }
 });
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  User.findOne({ username })
-    .then((user) => {
-      if (!user) {
-        res.status(403).send({
-          err: "Username not found. Either register or try again ",
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(403).send({
+        err: "Username not found. Either register or try again ",
+        token: null,
+      });
+    }
+    bcrypt.compare(password, user.password, (err, match) => {
+      if (!match) {
+        return res.status(403).send({
+          err: "User name or password is incorrect",
           token: null,
         });
-      } else {
-        bcrypt.compare(password, user.password, (err, match) => {
-          if (!match) {
-            res.status(403).send({
-              err: "User name or password is incorrect",
-              token: null,
-            });
-          } else {
-            const token = jwt.sign(
-              {
-                user: user._id,
-                authorized: true,
-              },
-              "testing out a secret",
-              {
-                expiresIn: 129600,
-              }
-            );
-            console.log(user);
-            res.json({
-              user,
-              token,
-            });
-          }
-        });
       }
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(403).send(err);
     });
+    const token = jwt.sign(
+      {
+        user: user._id,
+        authorized: true,
+      },
+      "testing out a secret",
+      {
+        expiresIn: 129600,
+      }
+    );
+    console.log(user);
+    res.json({
+      user,
+      token,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(403).send({
+      err: "Error logging in",
+      token: null,
+    });
+  }
 });
 
 router.get("/:id/profile", (req, res) => {
