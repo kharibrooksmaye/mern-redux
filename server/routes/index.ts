@@ -1,28 +1,48 @@
-const router = require("express").Router();
-const bcrypt = require("bcrypt");
-const https = require("https");
-const jwt = require("jsonwebtoken");
+import { ClientSettings } from "@bitwarden/sdk-napi";
+
+import express from "express";
+import bcrypt from "bcrypt";
+import https from "https";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import formidable from "formidable";
+import twilio from "twilio";
+
+import emailController from "../modules/email.controller";
+import User from "../models/user.model";
+import Token from "../models/token.model";
+import Record from "../models/records.model";
+import Doc from "../models/documents.model";
+import { IUser } from "../models/types";
+import Transloadit, { Assembly } from "transloadit";
+
+dotenv.config();
+
+const router = express.Router();
 
 const hashRounds = 12;
-require("dotenv").config();
-const formidable = require("formidable");
-
 const accountSid = "AC2923901b9ff40e1a8c61e877972aa3ae";
-const authToken = process.env.TWILIO_SECRET;
-const twilioVerificationService = process.env.TWILIO_VERIFY;
-const client = require("twilio")(accountSid, authToken);
-const emailController = require("../modules/email.controller");
-const User = require("../models/user.model");
-const Token = require("../models/token.model");
-const Record = require("../models/records.model");
-const Doc = require("../models/documents.model");
+const authToken = process.env.TWILIO_SECRET!;
+const twilioVerificationService = process.env.TWILIO_VERIFY!;
+const client = twilio(accountSid, authToken);
 
-const createTokenFromUser = (user) => ({
+const settings: ClientSettings = {
+  apiUrl: "https://api.bitwarden.com",
+};
+
+const createTokenFromUser = (user: IUser) => ({
   id: user._id,
   firstName: user.firstName,
   lastName: user.lastName,
 });
-const getBearerToken = (header, callback) => {
+interface BearerTokenCallback {
+  (error: string | null, token: string | null): void;
+}
+
+const getBearerToken = (
+  header: string | undefined,
+  callback: BearerTokenCallback
+): void => {
   if (header) {
     const token = header.split(" ");
     if (token) {
@@ -39,10 +59,14 @@ router.post("/transloadit", async (req, res) => {
     if (err) {
       res.status(500).json({ message: "error parsing" });
     }
-    let assembly = {};
+    let assembly: Assembly = {} as Assembly;
 
     try {
-      assembly = JSON.parse(fields.transloadit);
+      if (typeof fields.transloadit === "string") {
+        assembly = JSON.parse(fields.transloadit);
+      } else {
+        throw new Error("Invalid transloadit field");
+      }
     } catch (error) {
       res.status(500).json({ message: "Error Parsing Transloadit" }).end();
     }
