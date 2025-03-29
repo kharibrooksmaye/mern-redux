@@ -17,6 +17,32 @@ const Token = require("../models/token.model");
 const Record = require("../models/records.model");
 const Doc = require("../models/documents.model");
 
+const {
+  BitwardenClient,
+  ClientSettings,
+  DeviceType,
+  LogLevel,
+} = require("@bitwarden/sdk-napi");
+
+const sdk = require("@bitwarden/sdk-napi");
+
+const clientSettings = {
+  apiUrl: process.env.BW_API_URL,
+  identityUrl: process.env.BW_IDENTITY_URL,
+  userAgent: "Bitwarden SDK",
+  deviceType: DeviceType.SDK,
+};
+
+const handleSecret = async () => {
+  const bitwardenClient = new BitwardenClient(clientSettings);
+  await bitwardenClient.auth().loginAccessToken(process.env.BW_ACCESS_TOKEN);
+
+  const secret = await bitwardenClient
+    .secrets()
+    .get("ee41d2b0-9404-4e36-8cc9-b2ae017ad213");
+  return secret.value;
+};
+
 const createTokenFromUser = (user) => ({
   id: user._id,
   firstName: user.firstName,
@@ -350,37 +376,37 @@ router.get("/activate", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
+  handleSecret();
   try {
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(403).send({
-        err: "Username not found. Either register or try again ",
-        token: null,
+      throw new Error("User not found");
+    } else {
+      console.log(password, user.password);
+      bcrypt.compare(password, user.password, (err, match) => {
+        console.log(err, match);
+        if (!match) {
+          console.log("no match");
+          throw new Error("Password does not match");
+        }
+      });
+      const secret = await handleSecret();
+      const token = jwt.sign(
+        {
+          user: user._id,
+          authorized: true,
+        },
+        secret,
+        {
+          expiresIn: 129600,
+        }
+      );
+      console.log(user);
+      res.json({
+        user,
+        token,
       });
     }
-    bcrypt.compare(password, user.password, (err, match) => {
-      if (!match) {
-        return res.status(403).send({
-          err: "User name or password is incorrect",
-          token: null,
-        });
-      }
-    });
-    const token = jwt.sign(
-      {
-        user: user._id,
-        authorized: true,
-      },
-      "testing out a secret",
-      {
-        expiresIn: 129600,
-      }
-    );
-    console.log(user);
-    res.json({
-      user,
-      token,
-    });
   } catch (error) {
     console.log(error);
     res.status(403).send({
