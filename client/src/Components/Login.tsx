@@ -9,7 +9,13 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import React, { useContext, useMemo, useReducer, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Link } from "react-router-dom";
 import { Auth } from "../@types/auth";
@@ -17,7 +23,7 @@ import { AuthContext } from "../context/AuthContext";
 import RouterLink from "./RouterLink";
 
 const Login = () => {
-  const { user, loggedIn, token, login } = useContext(AuthContext) as Auth;
+  const { login } = useContext(AuthContext) as Auth;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -63,10 +69,16 @@ const Login = () => {
 
     try {
       const { password, username } = formInput;
-      const { data } = await axios.post("http://localhost:5000/api/login", {
-        username,
-        password,
-      });
+      const { data } = await axios.post(
+        "http://localhost:5000/api/login",
+        {
+          username,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
 
       console.log(data);
       login(data);
@@ -74,6 +86,13 @@ const Login = () => {
       console.log(error);
     }
   };
+
+  // useEffect(() => {
+  //   if (loggedIn) {
+  //     console.log(navigatePathname);
+  //     navigate(navigatePathname);
+  //   }
+  // }, [loggedIn]);
   return (
     <Box
       sx={{

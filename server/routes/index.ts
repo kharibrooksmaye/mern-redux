@@ -26,11 +26,33 @@ const authToken = process.env.TWILIO_SECRET!;
 const twilioVerificationService = process.env.TWILIO_VERIFY!;
 const client = twilio(accountSid, authToken);
 
-const settings: ClientSettings = {
-  apiUrl: "https://api.bitwarden.com",
+const {
+  BitwardenClient,
+  ClientSettings,
+  DeviceType,
+  LogLevel,
+} = require("@bitwarden/sdk-napi");
+
+const sdk = require("@bitwarden/sdk-napi");
+
+const clientSettings = {
+  apiUrl: process.env.BW_API_URL,
+  identityUrl: process.env.BW_IDENTITY_URL,
+  userAgent: "Bitwarden SDK",
+  deviceType: DeviceType.SDK,
 };
 
-const createTokenFromUser = (user: IUser) => ({
+const handleSecret = async () => {
+  const bitwardenClient = new BitwardenClient(clientSettings);
+  await bitwardenClient.auth().loginAccessToken(process.env.BW_ACCESS_TOKEN);
+
+  const secret = await bitwardenClient
+    .secrets()
+    .get("ee41d2b0-9404-4e36-8cc9-b2ae017ad213");
+  return secret.value;
+};
+
+const createTokenFromUser = (user) => ({
   id: user._id,
   firstName: user.firstName,
   lastName: user.lastName,
@@ -147,7 +169,7 @@ router.post("/transloadit", async (req, res) => {
   res.status(200).json({ message: "received" }).end();
 });
 
-router.get("/verify", (req, res) => {
+router.get("/verify", async (req, res) => {
   const authContact =
     req.query.authMethod === "sms"
       ? `+1${req.query.authContact}`
@@ -158,64 +180,58 @@ router.get("/verify", (req, res) => {
     channel: req.query.authMethod,
   };
   console.log(config);
-  client.verify
-    .services(twilioVerificationService)
-    .verifications.create(config)
-    .then((verification) => {
-      console.log(verification);
-      res.json(verification);
-    })
-    .catch((err) => {
-      res.json(err.message);
-      console.log(err);
-    });
+  try {
+    const verification = await client.verify
+      .services(twilioVerificationService)
+      .verifications.create(config);
+    console.log(verification);
+    res.json(verification);
+  } catch (err) {
+    console.log(err);
+    res.json(err.message);
+  }
 });
 
-router.post("/checking", (req, res) => {
+router.post("/checking", async (req, res) => {
   console.log(req.query);
   const authContact =
     req.body.authMethod === "sms"
       ? `+1${req.body.authContact}`
       : req.body.authContact;
   const { code } = req.body;
-  getBearerToken(req.headers.authorization, (error, token) => {
+  getBearerToken(req.headers.authorization, async (error, token) => {
     if (token) {
       let decoded = "";
       try {
         decoded = jwt.verify(token, "testing out a secret");
-      } catch (err) {
-        console.log("error verifying", err);
-      }
-      client.verify
-        .services(twilioVerificationService)
-        .verificationChecks.create({ to: authContact, code })
-        .then((verificationCheck) => {
-          if (verificationCheck.valid) {
-            decoded.authorized = true;
-            User.findById(decoded.user)
-              .then((user) => {
-                const verifiedToken = jwt.sign(decoded, "testing out a secret");
-                res.json({ user, verificationCheck, token: verifiedToken });
-              })
-              .catch(() => {
-                console.log("no user found");
-              });
-          } else {
-            console.log("incorrect but holding token");
-            res.status(res.statusCode).send({
-              success: false,
-              message: "Invalid verification code",
-            });
+        const verificationCheck = await client.verify
+          .services(twilioVerificationService)
+          .verificationChecks.create({ to: authContact, code });
+
+        if (verificationCheck.valid) {
+          decoded.authorized = true;
+          try {
+            const user = await User.findById(decoded.user);
+            const verifiedToken = jwt.sign(decoded, "testing out a secret");
+            res.json({ user, verificationCheck, token: verifiedToken });
+          } catch (err) {
+            console.log("no user found");
+            res.status(404).send(err);
           }
-        })
-        .catch((err) => {
-          console.log("holding user info");
-          res.status(res.statusCode).send({
-            err,
+        } else {
+          console.log("incorrect but holding token");
+          res.status(400).send({
+            success: false,
             message: "Invalid verification code",
           });
-          console.log(err);
+        }
+      } catch (err) {
+        console.log("error verifying", err);
+        res.status(403).send({
+          err,
+          message: "Invalid verification code",
         });
+      }
     }
   });
 });
@@ -315,37 +331,32 @@ router.get("/download", (req, res) => {
   // file.pipe(res);
 });
 
-router.post("/checkpw", (req, res) => {
-  const { username } = req.body;
-  const { password } = req.body;
-  User.findOne({ username })
-    .then((user) => {
-      if (!user) {
-        res.status(200).json({
-          err: "Username not found. Either register or try again ",
-          valid: false,
-        });
-      } else {
-        bcrypt.compare(password, user.password, (err, match) => {
-          if (!match) {
-            res.status(200).json({
-              err: "User name or password is incorrect",
-              valid: false,
-            });
-          } else {
-            console.log("password true");
-            res.json({
-              err: null,
-              valid: true,
-            });
-          }
-        });
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(403).send(err);
+router.post("/checkpw", async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(200).json({
+        err: "Username not found. Either register or try again ",
+        valid: false,
+      });
+    }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(200).json({
+        err: "User name or password is incorrect",
+        valid: false,
+      });
+    }
+    console.log("password true");
+    res.json({
+      err: null,
+      valid: true,
     });
+  } catch (err) {
+    console.log(err);
+    res.status(403).send(err);
+  }
 });
 router.post("/token", async (req, res) => {
   const { token } = req.body;
@@ -373,38 +384,39 @@ router.get("/activate", async (req, res) => {
 });
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-
   try {
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(403).send({
-        err: "Username not found. Either register or try again ",
-        token: null,
+      throw new Error("User not found");
+    } else {
+      bcrypt.compare(password, user.password, (err, match) => {
+        if (!match) {
+          console.log("no match");
+          throw new Error("Password does not match");
+        }
+      });
+      const secret = await handleSecret();
+      const authToken = jwt.sign(
+        {
+          user: user._id,
+          authorized: true,
+        },
+        secret,
+        {
+          expiresIn: "7d",
+        }
+      );
+      res.cookie("authToken", authToken, {
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      res.json({
+        user,
+        authToken,
       });
     }
-    bcrypt.compare(password, user.password, (err, match) => {
-      if (!match) {
-        return res.status(403).send({
-          err: "User name or password is incorrect",
-          token: null,
-        });
-      }
-    });
-    const token = jwt.sign(
-      {
-        user: user._id,
-        authorized: true,
-      },
-      "testing out a secret",
-      {
-        expiresIn: 129600,
-      }
-    );
-    console.log(user);
-    res.json({
-      user,
-      token,
-    });
   } catch (error) {
     console.log(error);
     res.status(403).send({
@@ -414,32 +426,67 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/:id/profile", (req, res) => {
-  User.findById(req.params.id)
-    .then((user) => res.json(user))
-    .catch((err) => {
-      console.log(err);
-      res.status(res.statusCode).send(err);
+router.get("/logout", (req, res) => {
+  res.clearCookie("authToken");
+  res.json({
+    message: "logged out",
+  });
+});
+
+router.get("/authenticated", async (req, res) => {
+  console.log("checking auth");
+  const cookie = req.headers.cookie;
+  console.log("cookie", cookie);
+  const updatedCookie = cookie?.replace("authToken=", "") || null;
+  const secret = await handleSecret();
+  if (updatedCookie) {
+    try {
+      console.log("cookie to be decoded", updatedCookie);
+      const decodedToken = jwt.verify(updatedCookie, secret);
+      console.log("decoded", decodedToken);
+      const user = await User.findById(decodedToken.user);
+      res.json({ user });
+    } catch (error) {
+      console.log("error verifying", error);
+      res.status(403).send({
+        err: "Invalid token",
+      });
+    }
+  } else {
+    res.status(403).send({
+      err: "No token provided",
     });
+  }
+});
+router.get("/:id/profile", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.json(user);
+  } catch (err) {
+    console.log(err);
+    res.status(res.statusCode).send(err);
+  }
 });
 
 router.get("/:id/records", async (req, res) => {
-  Record.find({ userid: req.params.id })
-    .then((records) => {
-      res.json({
-        records,
-        count: records.length,
-      });
-    })
-    .catch((err) => res.status(res.statusCode).send(err));
+  try {
+    const records = await Record.find({ userid: req.params.id });
+    res.json({
+      records,
+      count: records.length,
+    });
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
 });
 
-router.get("/:id/docs", (req, res) => {
-  Doc.find({ user_id: req.params.id })
-    .then((docs) => {
-      res.json(docs);
-    })
-    .catch((err) => res.status(res.statusCode).send(err));
+router.get("/:id/docs", async (req, res) => {
+  try {
+    const docs = await Doc.find({ user_id: req.params.id });
+    res.json(docs);
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
 });
 
 module.exports = router;

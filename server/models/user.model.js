@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 const uniqueValidator = require("mongoose-unique-validator");
 const Token = require("./token.model");
+const bcrypt = require("bcrypt");
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema(
@@ -69,29 +70,29 @@ userSchema.methods.generateVerificationToken = function () {
   return new Token(payload);
 };
 userSchema.plugin(uniqueValidator);
-// userSchema.pre('save', async function (next) {
-//     try {
-//         if (!this.isModified('password')) {
-//             return next();
-//         }
-//         const hashed = await bcrypt.hash(this.password, 10);
-//         this.password = hashed;
-//     } catch (err) {
-//         return next(err);
-//     }
-// });
+userSchema.pre("save", async function (next) {
+  try {
+    if (!this.isModified("password")) {
+      return next();
+    }
+    const hashed = bcrypt.hash(this.password, 10);
+    this.password = hashed;
+  } catch (err) {
+    return next(err);
+  }
+});
 
-// userSchema.pre('findOneAndUpdate', async function (next) {
-//     try {
-//         if (this._update.password) {
-//             const hashed = await bcrypt.hash(this._update.password, 10)
-//             this._update.password = hashed;
-//         }
-//         next();
-//     } catch (err) {
-//         return next(err);
-//     }
-// });
+userSchema.pre("findOneAndUpdate", async function (next) {
+  try {
+    if (this._update.password) {
+      const hashed = await bcrypt.hash(this._update.password, 10);
+      this._update.password = hashed;
+    }
+    next();
+  } catch (err) {
+    return next(err);
+  }
+});
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;

@@ -152,7 +152,6 @@ const ResponsiveAppBar = ({
 
   const pathname = location.pathname.replace("/", "");
   const currentPage = `${pathname.charAt(0).toUpperCase()}${pathname.slice(1)}`;
-  console.log(currentPage);
   return (
     <AppBar
       position="static"
@@ -279,7 +278,7 @@ const ResponsiveAppBar = ({
             <Box sx={{ flexGrow: 0 }}>
               <Tooltip title="Open settings">
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                  <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                  <Avatar alt="Remy Sharp" />
                 </IconButton>
               </Tooltip>
               <Menu

@@ -65,61 +65,52 @@ router.post("/activate", async (req, res) => {
         html,
       });
 
-      res
-        .status(200)
-        .json({
-          message: `A verification email has been sent to ${user.email}.`,
-        });
+      res.status(200).json({
+        message: `A verification email has been sent to ${user.email}.`,
+      });
     } else {
-      res
-        .status(404)
-        .json({
-          error:
-            "There is no account registered with that email address. Contact Zephyr Analytics at support@zephyr-analytics.com for assistance.",
-        });
+      res.status(404).json({
+        error:
+          "There is no account registered with that email address. Contact Zephyr Analytics at support@zephyr-analytics.com for assistance.",
+      });
     }
   } catch (error) {
     console.log(error);
     res.status(404).json(error);
   }
 });
-router.post("/receive_new_password/:userId/:token", (req, res) => {
+
+router.post("/receive_new_password/:userId/:token", async (req, res) => {
   const { userId, token } = req.params;
   const { password } = req.body;
 
-  User.findOne({ _id: userId })
-    .then((user) => {
-      const secret = `${user.password}-${user.createdAt}`;
-      const payload = jwt.decode(token, secret);
-      if (payload.id === user.id) {
-        bcrypt.genSalt(10, (salterror, salt) => {
-          if (salterror) {
-            return;
-          } else {
-            bcrypt.hash(password, salt, (hasherror, hash) => {
-              if (hasherror) {
-                console.log(hasherror);
-                return;
-              } else {
-                User.findOneAndUpdate(
-                  { _id: userId },
-                  { password: hash },
-                  { new: true }
-                )
-                  .then(() => {
-                    console.log("new password set");
-                    res.status(202).json("Password Change Accepted");
-                  })
-                  .catch((err) => res.status(500).json(err));
-              }
-            });
-          }
-        });
-      }
-    })
-    .catch(() => {
-      res.status(404).json("Invalid user");
-    });
+  try {
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).json("Invalid user");
+    }
+
+    const secret = `${user.password}-${user.createdAt}`;
+    const payload = jwt.decode(token, secret);
+
+    if (payload.id === user.id) {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(password, salt);
+
+      await User.findOneAndUpdate(
+        { _id: userId },
+        { password: hash },
+        { new: true }
+      );
+      console.log("new password set");
+      res.status(202).json("Password Change Accepted");
+    } else {
+      res.status(403).json("Invalid token");
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
 });
 
 module.exports = router;

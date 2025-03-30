@@ -7,4 +7,5 @@ export interface Auth {
   login: Function;
   logout: Function;
   setUser: Function;
+  isLoading: boolean;
 }

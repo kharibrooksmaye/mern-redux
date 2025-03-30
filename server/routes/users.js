@@ -3,35 +3,49 @@ const bcrypt = require("bcrypt");
 const User = require("../models/user.model");
 
 const hashRounds = 12;
-router.get("/search/:id", (req, res) => {
-  User.findOne({
-    $or: [{ _id: req.body.id }, { id: req.body.id }],
-  })
-    .then((user) => {
-      console.log();
-      res.json(user);
-    })
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+
+router.get("/search/:id", async (req, res) => {
+  try {
+    const user = await User.findOne({
+      $or: [{ _id: req.body.id }, { id: req.body.id }],
+    });
+    res.json(user);
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
 
-router.get("/:id", (req, res) => {
-  User.findOne({ _id: req.params.id })
-    .then((user) => res.json(user))
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id });
+    res.json(user);
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
 
-router.delete("/:id", (req, res) => {
-  User.findByIdAndDelete(req.params.id)
-    .then(() => res.json("User deleted"))
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+router.delete("/:id", async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json("User deleted");
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
 
 router.put("/:id", async (req, res) => {
   try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json("User not found");
+    }
+    const { password } = user;
     const updateObj = req.body;
-    console.log(updateObj);
     if (req.body.password) {
-      updateObj.password = await bcrypt.hash(req.body.password, hashRounds);
+      const hash = await bcrypt.hash(req.body.password, hashRounds);
+      updateObj.password = hash;
+    } else {
+      updateObj.password = password;
     }
     const updatedUser = await User.findOneAndUpdate(
       { _id: req.params.id },

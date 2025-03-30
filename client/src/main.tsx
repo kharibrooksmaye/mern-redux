@@ -9,12 +9,13 @@ import {
   Navigate,
   useNavigate,
   Outlet,
+  useLocation,
 } from "react-router-dom";
 import Users from "./Pages/Users/Users";
 import Samples from "./Pages/Samples/Samples";
 import Organizations from "./Pages/Organizations/Organizations";
 import Settings from "./Pages/Settings/Settings";
-import { ThemeProvider } from "@mui/material";
+import { CircularProgress, ThemeProvider } from "@mui/material";
 import { dashboardTheme } from "./dashboardTheme";
 import Home from "./Pages/Home/Home";
 import Login from "./Components/Login";
@@ -27,10 +28,13 @@ import Register from "./Components/Register";
 import { Auth } from "./@types/auth";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
-  const {user, token} = useContext(AuthContext) as Auth;
-
-
-  return user && token ? (
+  const { loggedIn, isLoading } = useContext(AuthContext) as Auth;
+  const location = useLocation();
+  console.log("PrivateRoute", loggedIn, isLoading);
+  if (isLoading) {
+    return <CircularProgress />;
+  }
+  return loggedIn ? (
     children || <Outlet />
   ) : (
     <Navigate to={{ pathname: "/login" }} state={{ from: location }} />
@@ -39,8 +43,7 @@ const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
   <ThemeProvider theme={dashboardTheme}>
-    
-      <BrowserRouter>
+    <BrowserRouter>
       <AuthProvider>
         <Routes>
           <Route path="/" element={<App />}>
@@ -60,8 +63,7 @@ root.render(
             </Route>
           </Route>
         </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    
+      </AuthProvider>
+    </BrowserRouter>
   </ThemeProvider>
 );
