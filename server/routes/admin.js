@@ -8,8 +8,8 @@ const auth = new google.auth.GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/compute"],
 });
 const transloadit = new TransloaditClient({
-  authKey: "2a9d686e51c34977b1dd8cf0834ae34f",
-  authSecret: "649efab077b7f54ae93b0724145c543e8226e864",
+  authKey: process.env.TRANSLOADIT_KEY,
+  authSecret: process.env.TRANSLOADIT_SECRET,
 });
 const compute = google.compute({ version: "v1", auth });
 const taskqueue = google.cloudtasks({ version: "v2beta3", auth });
@@ -180,9 +180,12 @@ router.get("/transloadit", (req, res) => {
 
 //Get all records by a user ID
 router.get("/records/:id", async (req, res) => {
-  Record.find({ userid: req.params.id })
-    .then((records) => res.json(records))
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+  try {
+    const records = await Record.find({ userid: req.params.id });
+    res.json(records);
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
 
 //Get all records
@@ -229,15 +232,21 @@ router.get("/users/", async (req, res) => {
 });
 
 router.get("/docs", async (req, res) => {
-  Doc.find()
-    .then((docs) => {
-      res.json(docs);
-    })
-    .catch((err) => res.status(res.statusCode).send(err));
+  try {
+    const docs = await Doc.find();
+    res.json(docs);
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
 });
-router.get("/user/:id", (req, res) => {
-  User.findById(req.params.id)
-    .then((user) => res.json(user))
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+
+router.get("/user/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.json(user);
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
+
 module.exports = router;

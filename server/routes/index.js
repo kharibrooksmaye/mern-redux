@@ -149,7 +149,7 @@ router.post("/transloadit", async (req, res) => {
   res.status(200).json({ message: "received" }).end();
 });
 
-router.get("/verify", (req, res) => {
+router.get("/verify", async (req, res) => {
   const authContact =
     req.query.authMethod === "sms"
       ? `+1${req.query.authContact}`
@@ -160,64 +160,58 @@ router.get("/verify", (req, res) => {
     channel: req.query.authMethod,
   };
   console.log(config);
-  client.verify
-    .services(twilioVerificationService)
-    .verifications.create(config)
-    .then((verification) => {
-      console.log(verification);
-      res.json(verification);
-    })
-    .catch((err) => {
-      res.json(err.message);
-      console.log(err);
-    });
+  try {
+    const verification = await client.verify
+      .services(twilioVerificationService)
+      .verifications.create(config);
+    console.log(verification);
+    res.json(verification);
+  } catch (err) {
+    console.log(err);
+    res.json(err.message);
+  }
 });
 
-router.post("/checking", (req, res) => {
+router.post("/checking", async (req, res) => {
   console.log(req.query);
   const authContact =
     req.body.authMethod === "sms"
       ? `+1${req.body.authContact}`
       : req.body.authContact;
   const { code } = req.body;
-  getBearerToken(req.headers.authorization, (error, token) => {
+  getBearerToken(req.headers.authorization, async (error, token) => {
     if (token) {
       let decoded = "";
       try {
         decoded = jwt.verify(token, "testing out a secret");
-      } catch (err) {
-        console.log("error verifying", err);
-      }
-      client.verify
-        .services(twilioVerificationService)
-        .verificationChecks.create({ to: authContact, code })
-        .then((verificationCheck) => {
-          if (verificationCheck.valid) {
-            decoded.authorized = true;
-            User.findById(decoded.user)
-              .then((user) => {
-                const verifiedToken = jwt.sign(decoded, "testing out a secret");
-                res.json({ user, verificationCheck, token: verifiedToken });
-              })
-              .catch(() => {
-                console.log("no user found");
-              });
-          } else {
-            console.log("incorrect but holding token");
-            res.status(res.statusCode).send({
-              success: false,
-              message: "Invalid verification code",
-            });
+        const verificationCheck = await client.verify
+          .services(twilioVerificationService)
+          .verificationChecks.create({ to: authContact, code });
+
+        if (verificationCheck.valid) {
+          decoded.authorized = true;
+          try {
+            const user = await User.findById(decoded.user);
+            const verifiedToken = jwt.sign(decoded, "testing out a secret");
+            res.json({ user, verificationCheck, token: verifiedToken });
+          } catch (err) {
+            console.log("no user found");
+            res.status(404).send(err);
           }
-        })
-        .catch((err) => {
-          console.log("holding user info");
-          res.status(res.statusCode).send({
-            err,
+        } else {
+          console.log("incorrect but holding token");
+          res.status(400).send({
+            success: false,
             message: "Invalid verification code",
           });
-          console.log(err);
+        }
+      } catch (err) {
+        console.log("error verifying", err);
+        res.status(403).send({
+          err,
+          message: "Invalid verification code",
         });
+      }
     }
   });
 });
@@ -317,37 +311,32 @@ router.get("/download", (req, res) => {
   // file.pipe(res);
 });
 
-router.post("/checkpw", (req, res) => {
-  const { username } = req.body;
-  const { password } = req.body;
-  User.findOne({ username })
-    .then((user) => {
-      if (!user) {
-        res.status(200).json({
-          err: "Username not found. Either register or try again ",
-          valid: false,
-        });
-      } else {
-        bcrypt.compare(password, user.password, (err, match) => {
-          if (!match) {
-            res.status(200).json({
-              err: "User name or password is incorrect",
-              valid: false,
-            });
-          } else {
-            console.log("password true");
-            res.json({
-              err: null,
-              valid: true,
-            });
-          }
-        });
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(403).send(err);
+router.post("/checkpw", async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(200).json({
+        err: "Username not found. Either register or try again ",
+        valid: false,
+      });
+    }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(200).json({
+        err: "User name or password is incorrect",
+        valid: false,
+      });
+    }
+    console.log("password true");
+    res.json({
+      err: null,
+      valid: true,
     });
+  } catch (err) {
+    console.log(err);
+    res.status(403).send(err);
+  }
 });
 router.post("/token", async (req, res) => {
   const { token } = req.body;
@@ -435,14 +424,8 @@ router.get("/authenticated", async (req, res) => {
       console.log("cookie to be decoded", updatedCookie);
       const decodedToken = jwt.verify(updatedCookie, secret);
       console.log("decoded", decodedToken);
-      User.findById(decodedToken.user)
-        .then((user) => {
-          res.json({ user });
-        })
-        .catch((err) => {
-          console.log(err);
-          res.status(res.statusCode).send(err);
-        });
+      const user = await User.findById(decodedToken.user);
+      res.json({ user });
     } catch (error) {
       console.log("error verifying", error);
       res.status(403).send({
@@ -455,32 +438,35 @@ router.get("/authenticated", async (req, res) => {
     });
   }
 });
-router.get("/:id/profile", (req, res) => {
-  User.findById(req.params.id)
-    .then((user) => res.json(user))
-    .catch((err) => {
-      console.log(err);
-      res.status(res.statusCode).send(err);
-    });
+router.get("/:id/profile", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.json(user);
+  } catch (err) {
+    console.log(err);
+    res.status(res.statusCode).send(err);
+  }
 });
 
 router.get("/:id/records", async (req, res) => {
-  Record.find({ userid: req.params.id })
-    .then((records) => {
-      res.json({
-        records,
-        count: records.length,
-      });
-    })
-    .catch((err) => res.status(res.statusCode).send(err));
+  try {
+    const records = await Record.find({ userid: req.params.id });
+    res.json({
+      records,
+      count: records.length,
+    });
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
 });
 
-router.get("/:id/docs", (req, res) => {
-  Doc.find({ user_id: req.params.id })
-    .then((docs) => {
-      res.json(docs);
-    })
-    .catch((err) => res.status(res.statusCode).send(err));
+router.get("/:id/docs", async (req, res) => {
+  try {
+    const docs = await Doc.find({ user_id: req.params.id });
+    res.json(docs);
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
 });
 
 module.exports = router;

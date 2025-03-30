@@ -3,26 +3,34 @@ const bcrypt = require("bcrypt");
 const User = require("../models/user.model");
 
 const hashRounds = 12;
-router.get("/search/:id", (req, res) => {
-  User.findOne({
-    $or: [{ _id: req.body.id }, { id: req.body.id }],
-  })
-    .then((user) => {
-      res.json(user);
-    })
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+
+router.get("/search/:id", async (req, res) => {
+  try {
+    const user = await User.findOne({
+      $or: [{ _id: req.body.id }, { id: req.body.id }],
+    });
+    res.json(user);
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
 
-router.get("/:id", (req, res) => {
-  User.findOne({ _id: req.params.id })
-    .then((user) => res.json(user))
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id });
+    res.json(user);
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
 
-router.delete("/:id", (req, res) => {
-  User.findByIdAndDelete(req.params.id)
-    .then(() => res.json("User deleted"))
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+router.delete("/:id", async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json("User deleted");
+  } catch (err) {
+    res.status(400).json(`Error: ${err}`);
+  }
 });
 
 router.put("/:id", async (req, res) => {

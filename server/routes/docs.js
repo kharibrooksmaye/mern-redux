@@ -29,56 +29,65 @@ const bucket = zephyr.bucket("zephyroutput");
 //     .then(() => res.json('Documents deleted'))
 //     .catch((err) => res.status(res.statusCode).send(err));
 // });
-router.route("/:id").get((req, res) => {
-  Doc.findById(req.params.id)
-    .then((doc) => res.json(doc))
-    .catch((err) => res.status(res.statusCode).send(err));
-});
-router.route("/records/:id").delete((req, res) => {
-  Doc.deleteMany({
-    recordId: req.params.id,
-  })
-    .then((result) => res.json(result))
-    .catch((err) => res.status(res.statusCode).send(err));
-});
-router.route("/:id").delete((req, res) => {
-  Doc.findByIdAndDelete(req.params.id)
-    .then(() => res.json("Document deleted"))
-    .catch((err) => res.status(res.statusCode).send(err));
+
+router.route("/:id").get(async (req, res) => {
+  try {
+    const doc = await Doc.findById(req.params.id);
+    res.json(doc);
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
 });
 
-router.route("/:id").put((req, res) => {
-  Doc.findByIdAndUpdate(req.params.id)
-    .then((doc) => {
-      const newDoc = {
-        ...doc,
-        username: req.body.username,
-        url: req.body.url,
-        type: req.body.type,
-        info: req.body.info,
-      };
-      newDoc
-        .save()
-        .then(() => res.json("Doc updated"))
-        .catch((err) => res.status(err.statusCode).send(err));
-    })
-    .catch((err) => res.status(err.statusCode).send(err));
+router.route("/records/:id").delete(async (req, res) => {
+  try {
+    const result = await Doc.deleteMany({ recordId: req.params.id });
+    res.json(result);
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
 });
-router.route("/add").post((req, res) => {
-  const { user_id, url, type, info } = req.body;
-  // const preview = req.body.preview
-  const newDoc = new Doc({
-    user_id,
-    url,
-    type,
-    info,
-    // preview,
-  });
 
-  newDoc
-    .save()
-    .then(() => res.json("document added!"))
-    .catch((err) => res.status(400).send(err));
+router.route("/:id").delete(async (req, res) => {
+  try {
+    await Doc.findByIdAndDelete(req.params.id);
+    res.json("Document deleted");
+  } catch (err) {
+    res.status(res.statusCode).send(err);
+  }
+});
+
+router.route("/:id").put(async (req, res) => {
+  try {
+    const doc = await Doc.findById(req.params.id);
+    if (!doc) {
+      return res.status(404).send("Document not found");
+    }
+    const newDoc = {
+      ...doc.toObject(),
+      username: req.body.username,
+      url: req.body.url,
+      type: req.body.type,
+      info: req.body.info,
+    };
+    const updatedDoc = await Doc.findByIdAndUpdate(req.params.id, newDoc, {
+      new: true,
+    });
+    res.json("Doc updated");
+  } catch (err) {
+    res.status(err.statusCode).send(err);
+  }
+});
+
+router.route("/add").post(async (req, res) => {
+  try {
+    const { user_id, url, type, info } = req.body;
+    const newDoc = new Doc({ user_id, url, type, info });
+    await newDoc.save();
+    res.json("Document added!");
+  } catch (err) {
+    res.status(400).send(err);
+  }
 });
 
 module.exports = router;
