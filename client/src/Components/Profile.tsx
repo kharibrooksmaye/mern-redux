@@ -42,14 +42,16 @@ const Profile = () => {
   const [localUser, setLocalUser] = useState(user);
   const [hover, setHover] = useState(false);
   const [edit, setEdit] = useState(false);
+  const [updatedProperties, setUpdatedProperties] = useState<{}>({});
 
   const disabled = JSON.stringify(user) === JSON.stringify(localUser);
-  console.log(user, localUser);
 
   const handleSubmit = async (e: React.FormEvent<FormElement>) => {
     e.preventDefault();
     const newUser = { ...localUser };
+    delete newUser.password;
     try {
+      console.log(newUser.password);
       const { data } = await axios.put(
         `http://localhost:5000/api/users/${user?._id}`,
         newUser
@@ -62,21 +64,25 @@ const Profile = () => {
   };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { type } = e.target;
+    const updatedObj = {
+      ...updatedProperties,
+    };
     if (localUser) {
       if (type === "checkbox") {
         const { value, name, checked } = e.target;
         const newUser = { ...localUser };
         (newUser as any)[name] = checked;
+        (updatedObj as any)[name] = checked;
         setUser(newUser);
       } else {
         const { value, name, checked } = e.target;
 
-        console.log(value);
         const newUser = { ...localUser };
         (newUser as any)[name] = value;
-        console.log(newUser);
-        setLocalUser(newUser);
+        (updatedObj as any)[name] = value;
+        setLocalUser(newUser as User);
       }
+      setUpdatedProperties(updatedObj);
     }
   };
 
@@ -169,7 +175,7 @@ const Profile = () => {
                 Object.keys(user).map((field) => {
                   if (["isActivated", "2fa", "admin"].includes(field)) {
                     return (
-                      <FormGroup>
+                      <FormGroup key={field}>
                         <FormControlLabel
                           control={
                             <Switch
@@ -189,7 +195,7 @@ const Profile = () => {
                   if (field === "authMethod") {
                     const options = ["sms", "email"];
                     return (
-                      <FormControl>
+                      <FormControl key={field}>
                         <FormLabel id="authmethod">Auth Method</FormLabel>
                         <RadioGroup
                           row
@@ -205,6 +211,7 @@ const Profile = () => {
                                 control={<Radio />}
                                 name={field}
                                 id={`${field}Input`}
+                                key={op}
                               />
                             );
                           })}
@@ -235,6 +242,7 @@ const Profile = () => {
                       margin="normal"
                       defaultValue={user[field as keyof User]}
                       InputLabelProps={{ shrink: true }}
+                      key={field}
                     />
                   );
                 })}

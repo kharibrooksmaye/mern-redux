@@ -375,36 +375,37 @@ router.get("/activate", async (req, res) => {
 });
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-
-  handleSecret();
   try {
     const user = await User.findOne({ username });
     if (!user) {
       throw new Error("User not found");
     } else {
-      console.log(password, user.password);
       bcrypt.compare(password, user.password, (err, match) => {
-        console.log(err, match);
         if (!match) {
           console.log("no match");
           throw new Error("Password does not match");
         }
       });
       const secret = await handleSecret();
-      const token = jwt.sign(
+      const authToken = jwt.sign(
         {
           user: user._id,
           authorized: true,
         },
         secret,
         {
-          expiresIn: 129600,
+          expiresIn: "7d",
         }
       );
-      console.log(user);
+      res.cookie("authToken", authToken, {
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
       res.json({
         user,
-        token,
+        authToken,
       });
     }
   } catch (error) {
@@ -416,6 +417,44 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get("/logout", (req, res) => {
+  res.clearCookie("authToken");
+  res.json({
+    message: "logged out",
+  });
+});
+
+router.get("/authenticated", async (req, res) => {
+  console.log("checking auth");
+  const cookie = req.headers.cookie;
+  console.log("cookie", cookie);
+  const updatedCookie = cookie?.replace("authToken=", "") || null;
+  const secret = await handleSecret();
+  if (updatedCookie) {
+    try {
+      console.log("cookie to be decoded", updatedCookie);
+      const decodedToken = jwt.verify(updatedCookie, secret);
+      console.log("decoded", decodedToken);
+      User.findById(decodedToken.user)
+        .then((user) => {
+          res.json({ user });
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(res.statusCode).send(err);
+        });
+    } catch (error) {
+      console.log("error verifying", error);
+      res.status(403).send({
+        err: "Invalid token",
+      });
+    }
+  } else {
+    res.status(403).send({
+      err: "No token provided",
+    });
+  }
+});
 router.get("/:id/profile", (req, res) => {
   User.findById(req.params.id)
     .then((user) => res.json(user))

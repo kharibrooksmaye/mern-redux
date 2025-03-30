@@ -21,7 +21,6 @@ const Navbar = () => {
   const drawerWidth = 250;
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
-  const { loggedIn, user } = useContext(AuthContext) as Auth;
 
   return (
     <Box>
