@@ -4,9 +4,21 @@ import TransloaditClient from "transloadit";
 
 const router = express.Router();
 
+interface NetworkResourceObject {
+  id: string;
+  name: string;
+  status: string;
+  type: string;
+}
+
+interface AdminData {
+  vms: NetworkResourceObject[];
+  assem: NetworkResourceObject[];
+  tasks: any;
+}
 const auth = new google.auth.GoogleAuth({
   projectId: "zephyrd",
-  keyFileName: "./modules/Zephyr.json",
+  keyFilename: "./modules/Zephyr.json",
   scopes: ["https://www.googleapis.com/auth/compute"],
 });
 const transloadit = new TransloaditClient({
@@ -57,56 +69,46 @@ router.get("/event", async (req, res) => {
     const runningVMs = newVMs.data.items.filter(
       (vm) => vm.status != "TERMINATED"
     );
-    runningVMs.forEach((vm) => {
-      let obj = {};
-      obj.type = "vm";
-      obj.id = vm.id;
-      obj.name = vm.name;
-      obj.status = vm.status;
-
+    runningVMs.forEach(({ id, name, status }) => {
+      let obj: NetworkResourceObject = {
+        type: "vm",
+        id,
+        name,
+        status,
+      };
       vmData.push(obj);
     });
-    transloadit.listAssemblies(options, (err, status) => {
-      let assemblyId = "";
 
-      if (status) {
-        const inProcess = status.items.filter(
-          (assem) => assem.ok === "ASSEMBLY_EXECUTING"
-        );
-        inProcess.forEach((assem) => {
-          let obj = {};
-          obj.type = "assembly";
-          obj.id = assem.id;
-          obj.name = assem.name;
-          obj.status = assem.status;
-          assemData.push(obj);
-        });
-        if (status.assembly_id) {
-          assemblyId = status.assembly_id;
-        }
-        // Low level errors (e.g. connection errors) are in err, Assembly errors are in status.error.
-        // For this example, we don't discriminate and only care about erroring out:
-        if (!err && status.error) {
-          err = `${status.error}. ${status.message}. `;
-        }
-      }
-
-      if (err) {
-        console.error({ status });
-        res.status(400).json("couldnt get data");
-        throw new Error(`❌ Unable to process Assembly ${assemblyId}. ${err}`);
-      }
-    });
+    const assemblies = await transloadit.listAssemblies(options);
+    if (assemblies) {
+      const inProcess = assemblies.items.filter(
+        (assem) => assem.ok === "ASSEMBLY_EXECUTING"
+      );
+      inProcess.forEach((assem) => {
+        const obj: NetworkResourceObject = {
+          type: "assembly",
+          id: assem.id,
+          status: assem.ok,
+          name: assem.instance,
+        };
+        assemData.push(obj);
+      });
+    } else {
+      console.error({ assemblies });
+      res.status(400).json("couldnt get data");
+      throw new Error(`❌ Unable to process Assemblies`);
+    }
     res.writeHead(200, {
       Connection: "keep-alive",
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       "Access-Control-Allow-Origin": "*",
     });
-    let data = {};
-    data.vms = vmData;
-    data.assem = assemData;
-    data.tasks = tasksData;
+    const data: AdminData = {
+      vms: vmData,
+      assem: assemData,
+      tasks: tasksData,
+    };
     console.log(data);
     res.flushHeaders();
     let eventInterval = setInterval(async () => {
@@ -148,36 +150,32 @@ router.get("/tasks", async (req, res) => {
   try {
     const tasks = await taskqueue.projects.locations.queues.tasks.list({
       parent,
-    }).data;
+    });
     console.log(tasks);
     res.status(200).json(tasks);
   } catch (error) {
     console.log(error);
   }
 });
-router.get("/transloadit", (req, res) => {
-  transloadit.listAssemblies(options, (err, status) => {
-    let assemblyId = "";
-
-    if (status) {
-      if (status.assembly_id) {
-        assemblyId = status.assembly_id;
-      }
-      // Low level errors (e.g. connection errors) are in err, Assembly errors are in status.error.
-      // For this example, we don't discriminate and only care about erroring out:
-      if (!err && status.error) {
-        err = `${status.error}. ${status.message}. `;
-      }
-    }
-
-    if (err) {
-      console.error({ status });
-      res.status(400).json("couldnt get data");
-      throw new Error(`❌ Unable to process Assembly ${assemblyId}. ${err}`);
-    }
-
-    res.status(200).json(status);
-  });
+router.get("/transloadit", async (req, res) => {
+  const assemblies = await transloadit.listAssemblies(options);
+  if (assemblies) {
+    const inProcess = assemblies.items.filter(
+      (assem) => assem.ok === "ASSEMBLY_EXECUTING"
+    );
+    inProcess.forEach((assem) => {
+      const obj: NetworkResourceObject = {
+        type: "assembly",
+        id: assem.id,
+        status: assem.ok,
+        name: assem.instance,
+      };
+    });
+  } else {
+    console.error({ assemblies });
+    res.status(400).json("couldnt get data");
+    throw new Error(`❌ Unable to process Assemblies`);
+  }
 });
 
 //Get all records by a user ID
