@@ -55,7 +55,7 @@
 		"sha1": "^1.1.1",
 		"stripe": "^8.12.0",
 		"transloadit": "^3.0.2",
-		"twilio": "^3.39.3",
+		"twilio": "^5.5.1",
 		"uuidv4": "^6.0.2"
 	},
 	"devDependencies": {

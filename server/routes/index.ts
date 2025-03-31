@@ -1,9 +1,7 @@
-import { ClientSettings } from "@bitwarden/sdk-napi";
-
 import express from "express";
 import bcrypt from "bcrypt";
 import https from "https";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import formidable from "formidable";
 import twilio from "twilio";
@@ -13,8 +11,15 @@ import User from "../models/user.model";
 import Token from "../models/token.model";
 import Record from "../models/records.model";
 import Doc from "../models/documents.model";
-import { IUser } from "../models/types";
+import { IRecord, IUser } from "../models/types";
 import Transloadit, { Assembly } from "transloadit";
+import {
+  BitwardenClient,
+  ClientSettings,
+  DeviceType,
+  LogLevel,
+} from "@bitwarden/sdk-napi";
+import { VerificationListInstanceCreateOptions } from "twilio/lib/rest/verify/v2/service/verification";
 
 dotenv.config();
 
@@ -26,15 +31,6 @@ const authToken = process.env.TWILIO_SECRET!;
 const twilioVerificationService = process.env.TWILIO_VERIFY!;
 const client = twilio(accountSid, authToken);
 
-const {
-  BitwardenClient,
-  ClientSettings,
-  DeviceType,
-  LogLevel,
-} = require("@bitwarden/sdk-napi");
-
-const sdk = require("@bitwarden/sdk-napi");
-
 const clientSettings = {
   apiUrl: process.env.BW_API_URL,
   identityUrl: process.env.BW_IDENTITY_URL,
@@ -44,15 +40,20 @@ const clientSettings = {
 
 const handleSecret = async () => {
   const bitwardenClient = new BitwardenClient(clientSettings);
+  if (!process.env.BW_ACCESS_TOKEN) {
+    throw new Error("No access token provided");
+  }
+  if (!process.env.JWT_SECRET_ID) {
+    throw new Error("No secret id provided");
+  }
   await bitwardenClient.auth().loginAccessToken(process.env.BW_ACCESS_TOKEN);
 
-  const secret = await bitwardenClient
-    .secrets()
-    .get("ee41d2b0-9404-4e36-8cc9-b2ae017ad213");
+  const secret = await bitwardenClient.secrets().get(process.env.JWT_SECRET_ID);
+
   return secret.value;
 };
 
-const createTokenFromUser = (user) => ({
+const createTokenFromUser = (user: IUser) => ({
   id: user._id,
   firstName: user.firstName,
   lastName: user.lastName,
@@ -121,7 +122,11 @@ router.post("/transloadit", async (req, res) => {
           { $push: { output: savedDoc } },
           { new: true }
         );
-        console.log(docPushed.output.length);
+        if (!docPushed) {
+          throw new Error("Record not found");
+        } else {
+          console.log(docPushed.output?.length);
+        }
       });
       filter.forEach(async (obj, i) => {
         if (obj.ext === "csv" || obj.ext === "pdf") {
@@ -140,7 +145,11 @@ router.post("/transloadit", async (req, res) => {
             { $push: { output: savedDoc } },
             { new: true }
           );
-          console.log(docPushed.output.length);
+          if (!docPushed) {
+            throw new Error("Record not found");
+          } else {
+            console.log(docPushed.output?.length);
+          }
         }
       });
       ipad_encoded.forEach(async (obj, i) => {
@@ -159,7 +168,11 @@ router.post("/transloadit", async (req, res) => {
           { $push: { output: savedDoc } },
           { new: true }
         );
-        console.log(docPushed.output.length);
+        if (!docPushed) {
+          throw new Error("Record not found");
+        } else {
+          console.log(docPushed.output?.length);
+        }
       });
 
       console.log(finalOutput);
@@ -174,12 +187,11 @@ router.get("/verify", async (req, res) => {
     req.query.authMethod === "sms"
       ? `+1${req.query.authContact}`
       : req.query.authContact;
-  const config = {
+  const config: VerificationListInstanceCreateOptions = {
     rateLimits: { limitsmshits: authContact },
-    to: authContact,
-    channel: req.query.authMethod,
+    to: authContact as string,
+    channel: req.query.authMethod as string,
   };
-  console.log(config);
   try {
     const verification = await client.verify
       .services(twilioVerificationService)
@@ -201,9 +213,9 @@ router.post("/checking", async (req, res) => {
   const { code } = req.body;
   getBearerToken(req.headers.authorization, async (error, token) => {
     if (token) {
-      let decoded = "";
+      const secret = await handleSecret();
       try {
-        decoded = jwt.verify(token, "testing out a secret");
+        const decoded = jwt.verify(token, secret) as JwtPayload;
         const verificationCheck = await client.verify
           .services(twilioVerificationService)
           .verificationChecks.create({ to: authContact, code });
@@ -212,7 +224,7 @@ router.post("/checking", async (req, res) => {
           decoded.authorized = true;
           try {
             const user = await User.findById(decoded.user);
-            const verifiedToken = jwt.sign(decoded, "testing out a secret");
+            const verifiedToken = jwt.sign(decoded, secret);
             res.json({ user, verificationCheck, token: verifiedToken });
           } catch (err) {
             console.log("no user found");
@@ -308,14 +320,14 @@ router.get("/download", (req, res) => {
   const url =
     "https://storage.cloud.google.com/zephyr-specimenuploads/Zephyr%20Questionnaire.pdf";
   https.get(url, (response) => {
-    const chunks = [];
+    const chunks: Buffer[] = [];
     response.on("data", (chunk) => {
       console.log("downloading");
       chunks.push(chunk);
     });
     response.on("end", () => {
       console.log("downloaded");
-      const file = new Buffer.concat(chunks).toString("base64");
+      const file = Buffer.concat(chunks).toString("base64");
       console.log(file);
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Headers", "X-Requested-With");
@@ -336,23 +348,23 @@ router.post("/checkpw", async (req, res) => {
   try {
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(200).json({
+      res.status(200).json({
         err: "Username not found. Either register or try again ",
         valid: false,
       });
-    }
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(200).json({
-        err: "User name or password is incorrect",
-        valid: false,
+    } else {
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        res.status(200).json({
+          err: "User name or password is incorrect",
+          valid: false,
+        });
+      }
+      res.json({
+        err: null,
+        valid: true,
       });
     }
-    console.log("password true");
-    res.json({
-      err: null,
-      valid: true,
-    });
   } catch (err) {
     console.log(err);
     res.status(403).send(err);
@@ -362,7 +374,7 @@ router.post("/token", async (req, res) => {
   const { token } = req.body;
   const newToken = await Token.findOne({ token });
   console.log(newToken);
-  const user = await User.findOne({ _id: newToken.userId });
+  const user = await User.findOne({ _id: newToken?.userId });
   res.status(200).json({ user });
 });
 router.get("/activate", async (req, res) => {
@@ -373,7 +385,7 @@ router.get("/activate", async (req, res) => {
       res.status(401).json({
         message: `The email address ${email} is not associated with any account. Contact Zephyr Analytics for support.`,
       });
-    if (!user.isActivated)
+    if (!user?.isActivated)
       res.status(200).json({
         type: "needs-activation",
         message: "Your account has not been activated.",
@@ -442,7 +454,7 @@ router.get("/authenticated", async (req, res) => {
   if (updatedCookie) {
     try {
       console.log("cookie to be decoded", updatedCookie);
-      const decodedToken = jwt.verify(updatedCookie, secret);
+      const decodedToken = jwt.verify(updatedCookie, secret) as JwtPayload;
       console.log("decoded", decodedToken);
       const user = await User.findById(decodedToken.user);
       res.json({ user });
