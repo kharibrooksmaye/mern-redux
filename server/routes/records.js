@@ -1,11 +1,12 @@
-const router = require("express").Router();
-const { Storage } = require("@google-cloud/storage");
-const TransloaditClient = require("transloadit");
-const { google } = require("googleapis");
-const { deleteGoogleRecords } = require("../helpers/DeleteFunctionality");
-const { PubSub } = require("@google-cloud/pubsub");
-const Doc = require("../models/documents.model");
-const Record = require("../models/records.model");
+import express from "express";
+import { Storage } from "@google-cloud/storage";
+import TransloaditClient from "transloadit";
+import { google } from "googleapis";
+import { PubSub } from "@google-cloud/pubsub";
+import Doc from "../models/documents.model";
+import Record from "../models/records.model";
+
+const router = express.Router();
 const zephyr = new Storage({
   keyFilename: "./modules/Zephyr.json",
   projectId: "zephyrd",
@@ -68,12 +69,10 @@ router.delete("/user/:id", async (req, res) => {
     await Record.find({ userid: req.params.id });
     await Doc.deleteMany({ user_id: req.params.id });
     const result = await Record.deleteMany({ userid: req.params.id });
-    res
-      .status(200)
-      .json({
-        count: result.deletedCount,
-        message: `record and docs in ${req.params.id} deleted`,
-      });
+    res.status(200).json({
+      count: result.deletedCount,
+      message: `record and docs in ${req.params.id} deleted`,
+    });
   } catch (error) {
     res.status(res.statusCode).send(error);
   }
@@ -288,4 +287,4 @@ router.put("/:id/upload", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

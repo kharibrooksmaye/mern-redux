@@ -1,13 +1,16 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const User = require('../models/user.model');
-
-const emailURL = process.env.NODE_ENV === 'production' ? 'https://zephyr-analytics.com' : 'http://localhost:3000';
-const {
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import User from "../models/user.model";
+import {
   transporter,
   getPasswordResetURL,
   resetPasswordTemplate,
-} = require('../helpers/emailFunctions');
+} from "../helpers/emailFunctions";
+
+const emailURL =
+  process.env.NODE_ENV === "production"
+    ? "https://zephyr-analytics.com"
+    : "http://localhost:3000";
 
 const createTokenFromHash = ({
   password: passwordHash,
@@ -33,14 +36,14 @@ const sendPasswordResetEmail = async (req, res) => {
     const sendEmail = () => {
       transporter.sendMail(emailTemplate, (err, info) => {
         if (err) {
-          res.status(500).json('Error sending email');
+          res.status(500).json("Error sending email");
         }
-        console.log('** Email sent ** ', info.response);
+        console.log("** Email sent ** ", info.response);
       });
     };
     sendEmail();
   } catch (error) {
-    res.status(403).send('No user with this email');
+    res.status(403).send("No user with this email");
   }
 };
 
@@ -56,15 +59,15 @@ const receiveNewPassword = (req, res) => {
         bcrypt.genSalt(10, (salterror, salt) => {
           if (salterror) return;
           bcrypt.hash(password, salt, (hasherror, hash) => {
-            console.log(password, hash)
+            console.log(password, hash);
             if (hasherror) return;
             User.findOneAndUpdate(
               { _id: userId },
               { password: hash },
-              { new: true },
+              { new: true }
             )
               .then(() => {
-                res.status(202).json('Password Change Accepted');
+                res.status(202).json("Password Change Accepted");
               })
               .catch((err) => res.status(500).json(err));
           });
@@ -72,7 +75,7 @@ const receiveNewPassword = (req, res) => {
       }
     })
     .catch(() => {
-      res.status(404).json('Invalid user');
+      res.status(404).json("Invalid user");
     });
 };
 
@@ -90,27 +93,37 @@ const sendVerificationEmail = async (req, res) => {
 
       console.log(token.token);
       console.log(emailURL);
-      const subject = 'Account Verification Token';
+      const subject = "Account Verification Token";
       const to = user.email;
       const from = process.env.ELOG;
       const link = `${emailURL}/activate/${to}/${token.token}`;
-      const html = `<p>Hi ${user.username || user.email }</p><br><p>Please click on the following <a href="${link}">link</a> to verify your account.</p><br><p>If you did not request this, please ignore this email.</p>`;
+      const html = `<p>Hi ${
+        user.username || user.email
+      }</p><br><p>Please click on the following <a href="${link}">link</a> to verify your account.</p><br><p>If you did not request this, please ignore this email.</p>`;
 
       const info = await transporter.sendMail({
-        to, from, subject, html,
+        to,
+        from,
+        subject,
+        html,
       });
 
       console.log(info);
 
-      res.status(200).json({ message: `A verification email has been sent to ${user.email}.` });
+      res.status(200).json({
+        message: `A verification email has been sent to ${user.email}.`,
+      });
     } else {
-      res.status(404).json({ error: 'There is no account registered with that email address. Contact Zephyr Analytics at support@zephyr-analytics.com for assistance.' });
+      res.status(404).json({
+        error:
+          "There is no account registered with that email address. Contact Zephyr Analytics at support@zephyr-analytics.com for assistance.",
+      });
     }
   } catch (error) {
-    console.log(error)
-    console.log('goddamn');
+    console.log(error);
+    console.log("goddamn");
     res.status(404).json(error);
   }
 };
 
-module.exports = { sendPasswordResetEmail, receiveNewPassword, sendVerificationEmail };
+export { sendPasswordResetEmail, receiveNewPassword, sendVerificationEmail };

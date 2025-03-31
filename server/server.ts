@@ -1,11 +1,21 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
-const path = require("path");
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
+import path from "path";
+import dotenv from "dotenv";
 
-require("dotenv").config();
+import docsRouter from "./routes/docs";
+import usersRouter from "./routes/users";
+import indexRouter from "./routes/index";
+import recordsRouter from "./routes/records";
+import adminRouter from "./routes/admin";
+import emailRouter from "./routes/email";
 
+dotenv.config();
+
+interface CustomRequest extends express.Request {
+  rawBody?: string;
+}
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -24,7 +34,11 @@ app.use(
 
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
-    const schema = (req.headers["x-forwarded-proto"] || "").toLowerCase();
+    const schema = (
+      Array.isArray(req.headers["x-forwarded-proto"])
+        ? req.headers["x-forwarded-proto"][0]
+        : req.headers["x-forwarded-proto"] || ""
+    ).toLowerCase();
     if (schema === "https") {
       next();
     } else {
@@ -39,8 +53,8 @@ process.on("unhandledRejection", (error) => {
 });
 
 app.use(
-  bodyParser.json({
-    verify(req, res, buf) {
+  express.json({
+    verify(req: CustomRequest, res, buf) {
       const url = req.originalUrl;
       if (url.startsWith("/api/records/webhook")) {
         req.rawBody = buf.toString();
@@ -49,7 +63,7 @@ app.use(
   })
 );
 
-const uri = process.env.ATLAS_URI;
+const uri = process.env.ATLAS_URI as string;
 mongoose.connect(uri);
 const { connection } = mongoose;
 
@@ -57,13 +71,6 @@ connection.once("open", () => {
   console.log("MongoDB database connection established successfully");
 });
 //
-
-const docsRouter = require("./routes/docs");
-const usersRouter = require("./routes/users");
-const indexRouter = require("./routes/index");
-const recordsRouter = require("./routes/records");
-const adminRouter = require("./routes/admin");
-const emailRouter = require("./routes/email");
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "client/build")));

@@ -2,8 +2,9 @@ const nodemon = require("nodemon");
 const ngrok = require("ngrok");
 
 nodemon({
-  script: "server.js",
-  ext: "js",
+  script: "server.ts",
+  ext: "ts",
+  exec: "ts-node server.ts",
 });
 
 let url = null;

@@ -1,6 +1,8 @@
-const router = require("express").Router();
-const { Storage } = require("@google-cloud/storage");
-const Doc = require("../models/documents.model");
+import express from "express";
+import { Storage } from "@google-cloud/storage";
+import Doc from "../models/documents.model.ts";
+
+const router = express.Router();
 
 const zephyr = new Storage({
   keyFileName: "./modules/Zephyr.json",
@@ -90,4 +92,4 @@ router.route("/add").post(async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

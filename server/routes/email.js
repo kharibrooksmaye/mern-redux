@@ -1,15 +1,17 @@
-const router = require("express").Router();
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+import express from "express";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
-const User = require("../models/user.model");
+import User from "../models/user.model.ts";
 
-const {
+import {
   transporter,
   getPasswordResetURL,
   resetPasswordTemplate,
   createTokenFromHash,
-} = require("../helpers/emailFunctions");
+} from "../helpers/emailFunctions.js";
+
+const router = express.Router();
 
 const emailURL =
   process.env.NODE_ENV === "production"
@@ -113,4 +115,4 @@ router.post("/receive_new_password/:userId/:token", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

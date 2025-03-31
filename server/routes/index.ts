@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import formidable from "formidable";
 import twilio from "twilio";
 
-import emailController from "../modules/email.controller";
+import { sendVerificationEmail } from "../modules/email.controller";
 import User from "../models/user.model";
 import Token from "../models/token.model";
 import Record from "../models/records.model";
@@ -307,7 +307,7 @@ router.post("/create", async (req, res) => {
   } else {
     try {
       await newUser.save();
-      const result = await emailController.sendVerificationEmail(req, res);
+      const result = await sendVerificationEmail(req, res);
       console.log(result);
     } catch (err) {
       console.log(err);
@@ -501,4 +501,4 @@ router.get("/:id/docs", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

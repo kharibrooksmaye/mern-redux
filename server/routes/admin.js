@@ -1,6 +1,8 @@
-const router = require("express").Router();
-const { google } = require("googleapis");
-const TransloaditClient = require("transloadit");
+import express from "express";
+import { google } from "googleapis";
+import TransloaditClient from "transloadit";
+
+const router = express.Router();
 
 const auth = new google.auth.GoogleAuth({
   projectId: "zephyrd",
@@ -13,10 +15,10 @@ const transloadit = new TransloaditClient({
 });
 const compute = google.compute({ version: "v1", auth });
 const taskqueue = google.cloudtasks({ version: "v2beta3", auth });
-const User = require("../models/user.model");
-const Doc = require("../models/documents.model");
-const Record = require("../models/records.model");
-const cloudTasks = require("@google-cloud/tasks");
+import User from "../models/user.model";
+import Doc from "../models/documents.model";
+import Record from "../models/records.model";
+import * as cloudTasks from "@google-cloud/tasks";
 const taskClient = new cloudTasks.v2beta3.CloudTasksClient({
   keyFileName: "./modules/Zephyr.json",
 });
@@ -249,4 +251,4 @@ router.get("/user/:id", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

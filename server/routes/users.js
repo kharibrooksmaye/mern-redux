@@ -1,6 +1,8 @@
-const router = require("express").Router();
-const bcrypt = require("bcrypt");
-const User = require("../models/user.model");
+import express from "express";
+import bcrypt from "bcrypt";
+import User from "../models/user.model.ts";
+
+const router = express.Router();
 
 const hashRounds = 12;
 
@@ -63,4 +65,4 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
