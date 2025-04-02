@@ -37,5 +37,7 @@ export interface IUser extends Document {
   records?: any[];
   admin: boolean;
   authMethod: string;
+  createdAt: Date;
+  updatedAt: Date;
   generateVerificationToken: () => IToken;
 }

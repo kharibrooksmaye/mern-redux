@@ -3,6 +3,7 @@ import crypto from "crypto";
 import uniqueValidator from "mongoose-unique-validator";
 import Token from "./token.model";
 import { IUser } from "./types";
+import Record from "./records.model";
 
 const userSchema = new Schema<IUser>(
   {
@@ -42,7 +43,7 @@ const userSchema = new Schema<IUser>(
       default: true,
     },
     records: {
-      type: Array,
+      type: [Record],
       required: false,
     },
     admin: {

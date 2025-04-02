@@ -8,7 +8,7 @@ const Record = require("../models/records.model");
 const zephyrinput = zephyr.bucket("zephyrinput");
 const zephyroutput = zephyr.bucket("zephyroutput");
 
-const deleteGoogleRecords = async (userid, recordId) => {
+const deleteGoogleRecords = async (userid: string, recordId: string) => {
   let [inputfiles] = await zephyrinput.getFiles({
     autoPaginate: false,
     prefix: `${userid}/${recordId}`,
@@ -43,12 +43,11 @@ const deleteGoogleRecords = async (userid, recordId) => {
       await file.delete();
     }
   });
-  Record.deleteOne({ id: recordId })
-    .then((result) => {
-      console.log(result);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  try {
+    const result = Record.deleteOne({ id: recordId });
+    console.log(result);
+  } catch (err) {
+    console.log(err);
+  }
 };
 export default deleteGoogleRecords;

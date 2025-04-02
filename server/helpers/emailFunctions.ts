@@ -16,7 +16,14 @@ const emailURL =
     ? "https://zephyr-analytics.com"
     : "http://localhost:3000";
 
-const getPasswordResetURL = (user, token) =>
+interface User {
+  _id: string;
+  email: string;
+  firstName?: string;
+  password: string;
+}
+
+const getPasswordResetURL = (user: User, token: string): string =>
   `${emailURL}/updatepw/${user._id}/${token}`;
 
 const resetPasswordTemplate = (user, url) => {
@@ -39,7 +46,12 @@ const resetPasswordTemplate = (user, url) => {
   };
 };
 
-const createTokenFromHash = (user) => {
+interface CreateTokenUser {
+  _id: string;
+  password: string;
+}
+
+const createTokenFromHash = (user: CreateTokenUser): string => {
   const userId = user._id;
   const timestamp = Date.now();
   const secret = `${user.password}-${timestamp}`;

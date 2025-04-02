@@ -1,15 +1,17 @@
 import express from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-import User from "../models/user.model.ts";
+import User from "../models/user.model";
 
 import {
   transporter,
   getPasswordResetURL,
   resetPasswordTemplate,
   createTokenFromHash,
-} from "../helpers/emailFunctions.js";
+} from "../helpers/emailFunctions";
+import { IUser } from "../models/types";
+import tokenModel from "../models/token.model";
 
 const router = express.Router();
 
@@ -20,20 +22,19 @@ const emailURL =
 
 router.post("/user/:email", async (req, res) => {
   const { email } = req.params;
-  let user;
+  let user: IUser;
   try {
     user = await User.findOne({ email }).exec();
     const token = createTokenFromHash(user);
     const url = getPasswordResetURL(user, token);
     const emailTemplate = resetPasswordTemplate(user, url);
     const sendEmail = () => {
-      transporter.sendMail(emailTemplate, (err, info) => {
-        if (err) {
-          res.status(500).json(`Error sending email: ${err.message}`);
-        } else {
-          res.status(200).json(`Email sent successfully: ${info.response}`);
-        }
-      });
+      try {
+        const info = transporter.sendMail(emailTemplate);
+        res.status(200).json(`Email sent successfully: ${info.response}`);
+      } catch (error) {
+        res.status(500).json(`Error sending email: ${error.message}`);
+      }
     };
     sendEmail();
   } catch (error) {
@@ -47,7 +48,7 @@ router.post("/activate", async (req, res) => {
     console.log(email);
     const user = await User.findOne({ email });
     if (user) {
-      const token = user.generateVerificationToken();
+      const token = new tokenModel(user.generateVerificationToken());
 
       // Save the verification token
       await token.save();
@@ -69,6 +70,7 @@ router.post("/activate", async (req, res) => {
 
       res.status(200).json({
         message: `A verification email has been sent to ${user.email}.`,
+        info,
       });
     } else {
       res.status(404).json({
@@ -89,11 +91,11 @@ router.post("/receive_new_password/:userId/:token", async (req, res) => {
   try {
     const user = await User.findOne({ _id: userId });
     if (!user) {
-      return res.status(404).json("Invalid user");
+      res.status(404).json("Invalid user");
     }
 
     const secret = `${user.password}-${user.createdAt}`;
-    const payload = jwt.decode(token, secret);
+    const payload = jwt.verify(token, secret) as JwtPayload;
 
     if (payload.id === user.id) {
       const salt = await bcrypt.genSalt(10);

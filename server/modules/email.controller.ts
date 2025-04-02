@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import User from "../models/user.model";
 import {
@@ -6,6 +6,8 @@ import {
   getPasswordResetURL,
   resetPasswordTemplate,
 } from "../helpers/emailFunctions";
+import tokenModel from "../models/token.model";
+import { IUser } from "../models/types";
 
 const emailURL =
   process.env.NODE_ENV === "production"
@@ -24,9 +26,23 @@ const createTokenFromHash = ({
   return token;
 };
 
-const sendPasswordResetEmail = async (req, res) => {
+interface SendPasswordResetEmailRequestParams {
+  email: string;
+}
+
+interface SendPasswordResetEmailResponse {
+  status: (code: number) => {
+    json: (body: string | object) => void;
+    send: (body: string) => void;
+  };
+}
+
+const sendPasswordResetEmail = async (
+  req: { params: SendPasswordResetEmailRequestParams },
+  res: SendPasswordResetEmailResponse
+) => {
   const { email } = req.params;
-  let user;
+  let user: IUser;
   try {
     user = await User.findOne({ email }).exec();
     const token = createTokenFromHash(user);
@@ -34,12 +50,12 @@ const sendPasswordResetEmail = async (req, res) => {
     const emailTemplate = resetPasswordTemplate(user, url);
 
     const sendEmail = () => {
-      transporter.sendMail(emailTemplate, (err, info) => {
-        if (err) {
-          res.status(500).json("Error sending email");
-        }
+      try {
+        const info = transporter.sendMail(emailTemplate);
         console.log("** Email sent ** ", info.response);
-      });
+      } catch (error) {
+        res.status(500).json({ message: "Error sending email", error });
+      }
     };
     sendEmail();
   } catch (error) {
@@ -47,14 +63,33 @@ const sendPasswordResetEmail = async (req, res) => {
   }
 };
 
-const receiveNewPassword = (req, res) => {
+interface ReceiveNewPasswordRequestParams {
+  userId: string;
+  token: string;
+}
+
+interface ReceiveNewPasswordRequestBody {
+  password: string;
+}
+
+const receiveNewPassword = (
+  req: {
+    params: ReceiveNewPasswordRequestParams;
+    body: ReceiveNewPasswordRequestBody;
+  },
+  res: {
+    status: (code: number) => {
+      json: (body: string | object) => void;
+    };
+  }
+) => {
   const { userId, token } = req.params;
   const { password } = req.body;
 
   User.findOne({ _id: userId })
     .then((user) => {
       const secret = `${user.password}-${user.createdAt}`;
-      const payload = jwt.decode(token, secret);
+      const payload = jwt.verify(token, secret) as JwtPayload;
       if (payload.userId === user.id) {
         bcrypt.genSalt(10, (salterror, salt) => {
           if (salterror) return;
@@ -79,14 +114,27 @@ const receiveNewPassword = (req, res) => {
     });
 };
 
-const sendVerificationEmail = async (req, res) => {
+interface SendVerificationEmailRequestBody {
+  email: string;
+}
+
+interface SendVerificationEmailResponse {
+  status: (code: number) => {
+    json: (body: string | object) => void;
+  };
+}
+
+const sendVerificationEmail = async (
+  req: { body: SendVerificationEmailRequestBody },
+  res: SendVerificationEmailResponse
+) => {
   try {
     const { email } = req.body;
     console.log(email);
     const user = await User.findOne({ email });
     if (user) {
       console.log(user);
-      const token = user.generateVerificationToken();
+      const token = new tokenModel(user.generateVerificationToken());
 
       // Save the verification token
       await token.save();

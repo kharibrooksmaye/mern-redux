@@ -1,6 +1,6 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import User from "../models/user.model.ts";
+import User from "../models/user.model.js";
 
 const router = express.Router();
 
@@ -39,7 +39,7 @@ router.put("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      return res.status(404).json("User not found");
+      res.status(404).json("User not found");
     }
     const { password } = user;
     const updateObj = req.body;

@@ -12,12 +12,12 @@ const zephyr = new Storage({
   projectId: "zephyrd",
 });
 const auth = new google.auth.GoogleAuth({
-  keyFileName: "./modules/Zephyr.json",
+  keyFilename: "./modules/Zephyr.json",
   projectId: "zephyrd",
 });
 const compute = google.compute({ version: "v1", auth });
 const pubSubClient = new PubSub({
-  keyFileName: "./modules/Zephyr.json",
+  keyFilename: "./modules/Zephyr.json",
   projectId: "zephyrd",
 });
 const copyFile = async (userid, recordid) => {
@@ -31,12 +31,12 @@ const copyFile = async (userid, recordid) => {
     );
 };
 
-const getFiles = async (userid, recordid) => {
+const getFiles = async (userid: string, recordid: string) => {
   try {
     const results = await zephyr
       .bucket("zephyroutput")
       .getFiles({ prefix: `${userid}/${recordid}` });
-    if (results.length > 0 && results.length === 1 && results[0].length === 0) {
+    if (results.length > 0 && results[0].length === 0) {
       return false;
     }
     return true;
@@ -54,7 +54,7 @@ const publishMessage = async (data) => {
   try {
     const messageId = await pubSubClient
       .topic("zephyr-topic")
-      .publish(dataBuffer);
+      .publishMessage({ data: dataBuffer });
     console.log(`Message ${messageId} published`);
   } catch (error) {
     console.error(`Received error while publishing: ${error.message}`);
@@ -118,11 +118,11 @@ router.get("/:id", async (req, res) => {
 
 // create new record
 router.post("/new", async (req, res) => {
-  console.log(req.body);
+  const { id, volume, userid } = req.body;
   const newRecord = new Record({
-    id: req.body.id,
-    volume: req.body.volume,
-    userid: req.body.userid,
+    id,
+    volume,
+    userid,
     upload: true,
     uploaded: false,
     specimens: [],
@@ -138,25 +138,24 @@ router.post("/new", async (req, res) => {
 
 // refresh record
 router.post("/:id/refresh", async (req, res) => {
+  const { user_id, record_id } = req.body;
   const transloadit = new TransloaditClient({
-    authKey: "2a9d686e51c34977b1dd8cf0834ae34f",
-    authSecret: "649efab077b7f54ae93b0724145c543e8226e864",
+    authKey: process.env.TRANSLOADIT_REFRESH_KEY,
+    authSecret: process.env.TRANSLOADIT_REFRESH_SECRET,
   });
   const opts = {
     waitForCompletion: false,
     params: {
-      auth: { key: "2a9d686e51c34977b1dd8cf0834ae34f" },
-      template_id: "4c17d4ac32bb4482b8e0352511b00df6",
+      auth: { key: process.env.TRANSLOADIT_REFRESH_KEY },
+      template_id: process.env.TRANSLOADIT_TEMPLATE_ID,
       fields: {
-        user_id: req.body.user_id,
-        record_id: req.body.record_id,
+        user_id,
+        record_id,
       },
     },
   };
   try {
     await transloadit.createAssembly(opts);
-    console.log("running Assembly");
-    console.log("assembly run");
     res
       .status(200)
       .json({ type: "success", message: "Analysis processing, please wait" });
@@ -189,9 +188,7 @@ router.post("/:id/republish", async (req, res) => {
     });
     const data = newVMs.data.items;
     const running = data.filter((vm) => vm.status === "RUNNING");
-    console.log(running.length);
     if (running && running.length < 5) {
-      console.log(task);
       await publishMessage(task);
     }
     res.status(200).send("Uploaded Specimens");

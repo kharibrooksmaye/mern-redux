@@ -1,11 +1,11 @@
 import express from "express";
 import { Storage } from "@google-cloud/storage";
-import Doc from "../models/documents.model.ts";
+import Doc from "../models/documents.model.js";
 
 const router = express.Router();
 
 const zephyr = new Storage({
-  keyFileName: "./modules/Zephyr.json",
+  keyFilename: "./modules/Zephyr.json",
   projectId: "zephyrwebsite-272000",
 });
 const bucket = zephyr.bucket("zephyroutput");
@@ -63,7 +63,7 @@ router.route("/:id").put(async (req, res) => {
   try {
     const doc = await Doc.findById(req.params.id);
     if (!doc) {
-      return res.status(404).send("Document not found");
+      res.status(404).send("Document not found");
     }
     const newDoc = {
       ...doc.toObject(),
@@ -75,7 +75,7 @@ router.route("/:id").put(async (req, res) => {
     const updatedDoc = await Doc.findByIdAndUpdate(req.params.id, newDoc, {
       new: true,
     });
-    res.json("Doc updated");
+    res.json({ message: "Doc updated", updatedDoc });
   } catch (err) {
     res.status(err.statusCode).send(err);
   }
