@@ -430,7 +430,6 @@ router.post("/login", async (req, res) => {
       });
     }
   } catch (error) {
-    console.log(error);
     res.status(403).send({
       err: "Error logging in",
       token: null,
@@ -446,20 +445,18 @@ router.get("/logout", (req, res) => {
 });
 
 router.get("/authenticated", async (req, res) => {
-  console.log("checking auth");
-  const cookie = req.headers.cookie;
-  console.log("cookie", cookie);
-  const updatedCookie = cookie?.replace("authToken=", "") || null;
+  const cookies = req.headers.cookie;
+  const authCookie = cookies
+    ?.split(";")
+    .find((c) => c.trim().startsWith("authToken="));
+  const authToken = authCookie?.replace("authToken=", "") || null;
   const secret = await handleSecret();
-  if (updatedCookie) {
+  if (authToken) {
     try {
-      console.log("cookie to be decoded", updatedCookie);
-      const decodedToken = jwt.verify(updatedCookie, secret) as JwtPayload;
-      console.log("decoded", decodedToken);
+      const decodedToken = jwt.verify(authToken, secret) as JwtPayload;
       const user = await User.findById(decodedToken.user);
       res.json({ user });
     } catch (error) {
-      console.log("error verifying", error);
       res.status(403).send({
         err: "Invalid token",
       });
