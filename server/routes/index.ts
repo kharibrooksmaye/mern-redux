@@ -193,19 +193,17 @@ router.get("/verify", async (req, res) => {
     channel: req.query.authMethod as string,
   };
   try {
-    const verification = await client.verify
+    const verification = await client.verify.v2
       .services(twilioVerificationService)
       .verifications.create(config);
-    console.log(verification);
     res.json(verification);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.json(err.message);
   }
 });
 
 router.post("/checking", async (req, res) => {
-  console.log(req.query);
   const authContact =
     req.body.authMethod === "sms"
       ? `+1${req.body.authContact}`
@@ -216,7 +214,7 @@ router.post("/checking", async (req, res) => {
       const secret = await handleSecret();
       try {
         const decoded = jwt.verify(token, secret) as JwtPayload;
-        const verificationCheck = await client.verify
+        const verificationCheck = await client.verify.v2
           .services(twilioVerificationService)
           .verificationChecks.create({ to: authContact, code });
 
@@ -227,18 +225,18 @@ router.post("/checking", async (req, res) => {
             const verifiedToken = jwt.sign(decoded, secret);
             res.json({ user, verificationCheck, token: verifiedToken });
           } catch (err) {
-            console.log("no user found");
+            console.error("no user found");
             res.status(404).send(err);
           }
         } else {
-          console.log("incorrect but holding token");
+          console.error("incorrect but holding token");
           res.status(400).send({
             success: false,
             message: "Invalid verification code",
           });
         }
       } catch (err) {
-        console.log("error verifying", err);
+        console.error("error verifying", err);
         res.status(403).send({
           err,
           message: "Invalid verification code",
@@ -250,8 +248,6 @@ router.post("/checking", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   const { username, password, email, firstName, lastName, age } = req.body;
-
-  console.log(username, password, email);
 
   try {
     const hashedPassword = await bcrypt.hash(password, hashRounds);
@@ -265,39 +261,33 @@ router.post("/register", async (req, res) => {
     });
     const user = await User.findOne({ $or: [{ username }, { email }] });
     if (user) {
-      res.send({
+      console.error("user already exists");
+      res.status(400).send({
         error:
           "A user already exists with these credentials. Please login or choose a different email address or username",
       });
     } else {
-      console.log("creating user");
+      const secret = await handleSecret();
       const registeredUser = await newUser.save();
-      console.log(registeredUser);
       const tokenUser = createTokenFromUser(registeredUser);
-      const token = jwt.sign(
-        { tokenUser, authorized: true },
-        "testing out a secret",
-        {
-          expiresIn: 129600,
-        }
-      );
-      console.log(token);
-      console.log("working");
+      const token = jwt.sign({ tokenUser, authorized: true }, secret, {
+        expiresIn: 129600,
+      });
       res.send({
         err: null,
         token,
-        "2fa": false,
+        userCreated: true,
       });
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(res.statusCode).send({ error: "Error, user already exists" });
   }
 });
 
 router.post("/create", async (req, res) => {
   const { email, authMethod } = req.body;
-  const newUser = await new User({ email, authMethod, admin: false });
+  const newUser = new User({ email, authMethod, admin: false });
   const existing = await User.findOne({ email });
   if (existing) {
     res.send({
@@ -310,8 +300,7 @@ router.post("/create", async (req, res) => {
       const result = await sendVerificationEmail(req, res);
       console.log(result);
     } catch (err) {
-      console.log(err);
-      console.log("error 1");
+      console.error(err);
       res.status(400).send(err);
     }
   }
@@ -366,14 +355,13 @@ router.post("/checkpw", async (req, res) => {
       });
     }
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.status(403).send(err);
   }
 });
 router.post("/token", async (req, res) => {
   const { token } = req.body;
   const newToken = await Token.findOne({ token });
-  console.log(newToken);
   const user = await User.findOne({ _id: newToken?.userId });
   res.status(200).json({ user });
 });
@@ -391,13 +379,15 @@ router.get("/activate", async (req, res) => {
         message: "Your account has not been activated.",
       });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 });
 router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  const { identifier, password } = req.body;
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({
+      $or: [{ username: identifier }, { email: identifier }],
+    });
     if (!user) {
       throw new Error("User not found");
     } else {
@@ -430,8 +420,10 @@ router.post("/login", async (req, res) => {
       });
     }
   } catch (error) {
+    console.error("error logging in", error);
     res.status(403).send({
-      err: "Error logging in",
+      message: "Error logging in",
+      error,
       token: null,
     });
   }
@@ -457,6 +449,8 @@ router.get("/authenticated", async (req, res) => {
       const user = await User.findById(decodedToken.user);
       res.json({ user });
     } catch (error) {
+      console.error("error verifying token", error);
+      res.clearCookie("authToken");
       res.status(403).send({
         err: "Invalid token",
       });
@@ -472,7 +466,7 @@ router.get("/:id/profile", async (req, res) => {
     const user = await User.findById(req.params.id);
     res.json(user);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.status(res.statusCode).send(err);
   }
 });
@@ -485,6 +479,7 @@ router.get("/:id/records", async (req, res) => {
       count: records.length,
     });
   } catch (err) {
+    console.error(err);
     res.status(res.statusCode).send(err);
   }
 });
@@ -494,6 +489,7 @@ router.get("/:id/docs", async (req, res) => {
     const docs = await Doc.find({ user_id: req.params.id });
     res.json(docs);
   } catch (err) {
+    console.error(err);
     res.status(res.statusCode).send(err);
   }
 });

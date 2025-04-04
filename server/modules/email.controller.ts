@@ -42,9 +42,8 @@ const sendPasswordResetEmail = async (
   res: SendPasswordResetEmailResponse
 ) => {
   const { email } = req.params;
-  let user: IUser;
   try {
-    user = await User.findOne({ email }).exec();
+    const user = await User.findOne({ email });
     const token = createTokenFromHash(user);
     const url = getPasswordResetURL(user, token);
     const emailTemplate = resetPasswordTemplate(user, url);

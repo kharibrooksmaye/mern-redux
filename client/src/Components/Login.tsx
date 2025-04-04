@@ -1,5 +1,6 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import {
+  Alert,
   Box,
   Button,
   Grid,
@@ -23,7 +24,7 @@ import { AuthContext } from "../context/AuthContext";
 import RouterLink from "./RouterLink";
 
 const Login = () => {
-  const { login } = useContext(AuthContext) as Auth;
+  const { login, message, setMessage } = useContext(AuthContext) as Auth;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,7 +40,7 @@ const Login = () => {
   }, [location]);
   interface UserProps {
     password?: string;
-    username?: string;
+    identifier?: string;
     showPassword?: boolean;
   }
 
@@ -47,7 +48,7 @@ const Login = () => {
     (state: UserProps, newState: UserProps) => ({ ...state, ...newState }),
     {
       password: "",
-      username: "",
+      identifier: "",
       showPassword: false,
     }
   );
@@ -68,11 +69,11 @@ const Login = () => {
     setError(false);
 
     try {
-      const { password, username } = formInput;
+      const { password, identifier } = formInput;
       const { data } = await axios.post(
         "http://localhost:5000/api/login",
         {
-          username,
+          identifier,
           password,
         },
         {
@@ -80,10 +81,10 @@ const Login = () => {
         }
       );
 
-      console.log(data);
       login(data);
     } catch (error) {
       console.log(error);
+      setMessage({ content: "Invalid username or password", type: "warning" });
     }
   };
 
@@ -105,6 +106,7 @@ const Login = () => {
       }}
     >
       <Grid item xs={12} md={12} lg={10}>
+        {message && <Alert severity={message.type}>{message.content}</Alert>}
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -122,7 +124,7 @@ const Login = () => {
             label="Username or Email Address"
             size="small"
             type="text"
-            name="username"
+            name="identifier"
             onChange={handleChange}
           />
           <TextField

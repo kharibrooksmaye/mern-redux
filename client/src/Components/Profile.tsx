@@ -51,12 +51,10 @@ const Profile = () => {
     const newUser = { ...localUser };
     delete newUser.password;
     try {
-      console.log(newUser.password);
       const { data } = await axios.put(
         `http://localhost:5000/api/users/${user?._id}`,
         newUser
       );
-      console.log(data);
       if (data.user) setUser(data.user);
     } catch (error) {
       console.log(error);
@@ -85,6 +83,11 @@ const Profile = () => {
       setUpdatedProperties(updatedObj);
     }
   };
+
+  const fullName =
+    localUser?.firstName || localUser?.lastName
+      ? `${localUser?.firstName} ${localUser?.lastName}`
+      : "User";
 
   return (
     <Grid display="flex" container flexDirection="column">
@@ -161,7 +164,7 @@ const Profile = () => {
                   </Button>
                 </Box>
               ) : (
-                <Typography variant="body1">{`${localUser?.firstName} ${localUser?.lastName}`}</Typography>
+                <Typography variant="body1">{fullName}</Typography>
               )}
             </Grid>
           </Grid>

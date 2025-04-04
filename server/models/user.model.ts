@@ -43,7 +43,7 @@ const userSchema = new Schema<IUser>(
       default: true,
     },
     records: {
-      type: [Record],
+      type: Schema.Types.Mixed,
       required: false,
     },
     admin: {

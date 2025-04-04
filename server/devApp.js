@@ -4,7 +4,7 @@ const ngrok = require("ngrok");
 nodemon({
   script: "server.ts",
   ext: "ts",
-  exec: "ts-node server.ts",
+  exec: "ts-node --transpile-only server.ts", // Updated to use --transpile-only
 });
 
 let url = null;

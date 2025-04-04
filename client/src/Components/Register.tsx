@@ -9,14 +9,16 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import React, { useContext, useReducer, useState } from "react";
+import React, { useContext, useEffect, useReducer, useState } from "react";
 import { useNavigate } from "react-router";
 import { Link } from "react-router-dom";
 import { Auth } from "../@types/auth";
 import { AuthContext } from "../context/AuthContext";
 
 const Register = () => {
-  const { user, loggedIn, token, login } = useContext(AuthContext) as Auth;
+  const { user, loggedIn, token, login, setMessage } = useContext(
+    AuthContext
+  ) as Auth;
   const navigate = useNavigate();
 
   interface UserProps {
@@ -58,14 +60,28 @@ const Register = () => {
         email,
         password,
       });
-
       data?.error && setError(data?.error);
-      login(data);
-      user?._id && navigate("/profile");
+      if (data?.userCreated) {
+        setFormInput({
+          password: "",
+          username: "",
+          email: "",
+          showPassword: false,
+        });
+        setMessage({
+          content: "User created successfully. Login to continue",
+          type: "success",
+        });
+        navigate("/login");
+      }
     } catch (error) {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    user?._id && navigate("/profile");
+  }, [user, loggedIn]);
   return (
     <Box
       sx={{

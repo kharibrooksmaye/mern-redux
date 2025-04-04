@@ -15,15 +15,18 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<Auth["token"]>(null);
   const [loggedIn, setLoggedIn] = useState<Auth["loggedIn"]>(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<Auth["message"]>(null);
   const login = ({ user, authToken }: { user: User; authToken: string }) => {
     setUser(user);
-    console.log("setting logged in to true from login function");
     setLoggedIn(true);
     if (user?._id && authToken) {
+      setMessage({
+        type: "success",
+        content: "Login successful",
+      });
       navigate("/profile");
     }
   };
-
   const logout = () => {
     setIsLoading(true);
     try {
@@ -40,32 +43,6 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate("/");
   };
 
-  useEffect(() => {
-    const authenticate = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/authenticated",
-          {
-            withCredentials: true,
-          }
-        );
-        if (response.status === 200) {
-          const { user, token } = response.data;
-          setUser(user);
-          setToken(token);
-          setLoggedIn(true);
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error during authentication:", error);
-        setIsLoading(false);
-        return;
-      }
-    };
-    authenticate();
-  }, []);
-
   const authObject = {
     loggedIn,
     token,
@@ -74,6 +51,10 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
     setUser,
     isLoading,
+    message,
+    setMessage,
+    setToken,
+    setLoggedIn,
   };
   return (
     <AuthContext.Provider value={authObject}>{children}</AuthContext.Provider>

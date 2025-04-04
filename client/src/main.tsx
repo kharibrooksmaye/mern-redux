@@ -15,7 +15,7 @@ import Users from "./Pages/Users/Users";
 import Samples from "./Pages/Samples/Samples";
 import Organizations from "./Pages/Organizations/Organizations";
 import Settings from "./Pages/Settings/Settings";
-import { CircularProgress, ThemeProvider } from "@mui/material";
+import { Box, CircularProgress, ThemeProvider } from "@mui/material";
 import { dashboardTheme } from "./dashboardTheme";
 import Home from "./Pages/Home/Home";
 import Login from "./Components/Login";
@@ -26,20 +26,33 @@ import Blog from "./Components/Blog";
 import Pricing from "./Components/Pricing";
 import Register from "./Components/Register";
 import { Auth } from "./@types/auth";
+import { useAuth } from "./hooks/useAuth";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
-  const { loggedIn, isLoading } = useContext(AuthContext) as Auth;
+  const auth = useContext(AuthContext) as Auth;
+  const isAuthenticated = useAuth();
   const location = useLocation();
-  console.log("PrivateRoute", loggedIn, isLoading);
-  if (isLoading) {
-    return <CircularProgress />;
+  if (isAuthenticated === null) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
-  return loggedIn ? (
+  return isAuthenticated ? (
     children || <Outlet />
   ) : (
     <Navigate to={{ pathname: "/login" }} state={{ from: location }} />
   );
 };
+
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
   <ThemeProvider theme={dashboardTheme}>
@@ -57,7 +70,6 @@ root.render(
               <Route path="users" element={<Users />} />
               <Route path="samples" element={<Samples />} />
               <Route path="organizations" element={<Organizations />} />
-              <Route path="settings" element={<Settings />} />
               <Route path="settings" element={<Settings />} />
               <Route path="profile" element={<Profile />} />
             </Route>

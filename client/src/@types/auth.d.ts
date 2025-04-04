@@ -1,3 +1,8 @@
+import {
+  AlertColor,
+  AlertPropsColorOverrides,
+  AlertPropsVariantOverrides,
+} from "@mui/material";
 import { User } from "./user";
 
 export interface Auth {
@@ -7,5 +12,9 @@ export interface Auth {
   login: Function;
   logout: Function;
   setUser: Function;
-  isLoading: boolean;
+  isLoading: boolean | null;
+  message: { type: AlertColor; content: string } | null;
+  setMessage: Function;
+  setToken: Function;
+  setLoggedIn: Function;
 }

@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
+import { ObjectId } from "mongoose";
+import { IUser } from "../models/types";
 const transporter = nodemailer.createTransport({
   host: "smtpout.secureserver.net",
   port: 80,
@@ -17,13 +19,13 @@ const emailURL =
     : "http://localhost:3000";
 
 interface User {
-  _id: string;
+  _id: ObjectId;
   email: string;
   firstName?: string;
   password: string;
 }
 
-const getPasswordResetURL = (user: User, token: string): string =>
+const getPasswordResetURL = (user: Partial<IUser>, token: string): string =>
   `${emailURL}/updatepw/${user._id}/${token}`;
 
 const resetPasswordTemplate = (user, url) => {
@@ -46,12 +48,7 @@ const resetPasswordTemplate = (user, url) => {
   };
 };
 
-interface CreateTokenUser {
-  _id: string;
-  password: string;
-}
-
-const createTokenFromHash = (user: CreateTokenUser): string => {
+const createTokenFromHash = (user: Partial<IUser>): string => {
   const userId = user._id;
   const timestamp = Date.now();
   const secret = `${user.password}-${timestamp}`;

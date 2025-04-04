@@ -57,10 +57,10 @@ const Navbar = () => {
             onClick={() => navigate("/")}
           >
             <Typography fontWeight="700" textTransform="uppercase" variant="h5">
-              Horizon
+              Khari
             </Typography>
             <Typography fontWeight="300" textTransform="uppercase" variant="h5">
-              FREE
+              Dev
             </Typography>
           </Box>
         </Toolbar>

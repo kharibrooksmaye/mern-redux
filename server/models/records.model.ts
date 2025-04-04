@@ -18,7 +18,7 @@ const recordSchema = new Schema<IRecord>(
       required: true,
     },
     specimens: {
-      type: Array,
+      type: Schema.Types.Mixed,
     },
     specimensLength: {
       type: Number,
@@ -32,7 +32,7 @@ const recordSchema = new Schema<IRecord>(
       required: true,
     },
     output: {
-      type: Array,
+      type: Schema.Types.Mixed,
       required: false,
     },
   },
@@ -46,3 +46,4 @@ recordSchema.plugin(uniqueValidator);
 const Record = mongoose.model<IRecord>("Record", recordSchema);
 
 export default Record;
+export { recordSchema };
