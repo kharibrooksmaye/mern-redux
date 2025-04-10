@@ -35,7 +35,6 @@ function App() {
     <Box
       sx={{
         marginLeft: `250px`,
-        height: "100vh",
         backgroundColor: "#F4F7FE",
         padding: "30px",
       }}

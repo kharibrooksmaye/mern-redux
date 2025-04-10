@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -14,7 +15,6 @@ import logo from "../assets/logo.svg";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
 import { Auth } from "../@types/auth";
-import React from "react";
 import {
   Breadcrumbs,
   InputAdornment,
@@ -152,11 +152,20 @@ const ResponsiveAppBar = ({
 
   const pathname = location.pathname.replace("/", "");
   const currentPage = `${pathname.charAt(0).toUpperCase()}${pathname.slice(1)}`;
+
+  const [darkMode, setDarkMode] = useState(false);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.body.style.backgroundColor = darkMode ? "#ffffff" : "#121212";
+    document.body.style.color = darkMode ? "#000000" : "#ffffff";
+  };
+
   return (
     <AppBar
       position="static"
       sx={{
-        backgroundColor: "transparent",
+        backgroundColor: darkMode ? "#121212" : "transparent",
         boxShadow: "none",
         marginBottom: "20px",
       }}
@@ -254,6 +263,7 @@ const ResponsiveAppBar = ({
               flexDirection: "row",
               alignItems: "center",
               padding: "10px",
+              backgroundColor: darkMode ? "#333333" : "#F4F7FE",
               "& > * + *": { ml: 1 },
             }}
           >
@@ -269,8 +279,12 @@ const ResponsiveAppBar = ({
             <IconButton>
               <NotificationsOutlined fontSize="small" />
             </IconButton>
-            <IconButton>
-              <BedtimeOutlined fontSize="small" />
+            <IconButton onClick={toggleDarkMode}>
+              {darkMode ? (
+                <BedtimeOutlined fontSize="small" />
+              ) : (
+                <BedtimeOutlined fontSize="small" />
+              )}
             </IconButton>
             <IconButton>
               <InfoOutlined fontSize="small" />

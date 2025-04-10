@@ -9,10 +9,6 @@ const recordSchema = new Schema<IRecord>(
       required: true,
       unique: true,
     },
-    volume: {
-      type: Number,
-      required: true,
-    },
     upload: {
       type: Boolean,
       required: true,

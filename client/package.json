@@ -16,13 +16,21 @@
     "@mui/icons-material": "^5.6.1",
     "@mui/material": "^5.6.1",
     "@mui/x-data-grid": "^5.11.1",
+    "@uppy/core": "^4.4.3",
+    "@uppy/dashboard": "^4.3.2",
+    "@uppy/drag-drop": "^4.1.1",
+    "@uppy/file-input": "^4.1.1",
+    "@uppy/progress-bar": "^4.2.1",
+    "@uppy/react": "^4.2.2",
+    "@uppy/transloadit": "^4.2.1",
     "axios": "^0.26.1",
     "jwt-decode": "^3.1.2",
     "moment": "^2.29.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router": "^6.3.0",
-    "react-router-dom": "^6.3.0"
+    "react-router-dom": "^6.3.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",

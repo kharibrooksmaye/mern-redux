@@ -101,6 +101,20 @@ router.delete("/:id", async (req, res) => {
     res.status(res.statusCode).send(error);
   }
 });
+
+// get all records
+router.get("/", async (req, res) => {
+  try {
+    const records = await Record.find({});
+    if (records) {
+      res.status(200).send(records);
+    } else {
+      res.status(200).send(null);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+});
 // get specific record
 router.get("/:id", async (req, res) => {
   try {
@@ -121,7 +135,6 @@ router.post("/new", async (req, res) => {
   const { id, volume, userid } = req.body;
   const newRecord = new Record({
     id,
-    volume,
     userid,
     upload: true,
     uploaded: false,
