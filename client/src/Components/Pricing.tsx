@@ -58,17 +58,29 @@ const Pricing = () => {
   ];
 
   const oneTimePackages = [
-    { title: "Basic Package", price: "$100" },
-    { title: "Standard Package", price: "$200" },
-    { title: "Premium Package", price: "$300" },
+    { title: "Basic Package", price: "$100", stripeLookup: "basic_package" },
+    {
+      title: "Standard Package",
+      price: "$200",
+      stripeLookup: "standard_package",
+    },
+    {
+      title: "Premium Package",
+      price: "$300",
+      stripeLookup: "premium_package",
+    },
   ];
 
-  const createCheckoutSession = async (stripeLookup: string) => {
+  const createCheckoutSession = async (
+    stripeLookup: string,
+    paymentType: string
+  ) => {
     try {
       const response = await axios.post(
         "http://localhost:5000/api/create-checkout-session",
         {
           stripeLookup,
+          paymentType,
         },
         {
           headers: {
@@ -166,7 +178,9 @@ const Pricing = () => {
                 variant="contained"
                 color="primary"
                 style={{ margin: "15px" }}
-                onClick={() => createCheckoutSession(tier.stripeLookup ?? "")}
+                onClick={() =>
+                  createCheckoutSession(tier.stripeLookup ?? "", "subscription")
+                }
               >
                 Subscribe
               </Button>
@@ -193,6 +207,7 @@ const Pricing = () => {
                   variant="contained"
                   color="secondary"
                   style={{ marginTop: "15px" }}
+                  onClick={() => createCheckoutSession(pkg.title, "payment")}
                 >
                   Buy Now
                 </Button>
