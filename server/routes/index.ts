@@ -5,6 +5,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import formidable from "formidable";
 import twilio from "twilio";
+import Stripe from "stripe";
 
 import { sendVerificationEmail } from "../modules/email.controller";
 import User from "../models/user.model";
@@ -31,6 +32,9 @@ const authToken = process.env.TWILIO_SECRET!;
 const twilioVerificationService = process.env.TWILIO_VERIFY!;
 const client = twilio(accountSid, authToken);
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-03-31.basil",
+});
 const clientSettings = {
   apiUrl: process.env.BW_API_URL,
   identityUrl: process.env.BW_IDENTITY_URL,
@@ -201,6 +205,28 @@ router.get("/verify", async (req, res) => {
     console.error(err);
     res.json(err.message);
   }
+});
+
+router.post("/create-checkout-session", async (req, res) => {
+  console.log(req.body);
+  const { stripeLookup } = req.body;
+  console.log(stripeLookup);
+  const prices = await stripe.prices.list({
+    lookup_keys: [stripeLookup],
+    expand: ["data.product"],
+  });
+  const session = await stripe.checkout.sessions.create({
+    line_items: [
+      {
+        price: prices.data[0].id,
+        quantity: 1,
+      },
+    ],
+    mode: "subscription",
+    success_url: `${process.env.CLIENT_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.CLIENT_URL}/pricing?canceled=true`,
+  });
+  res.status(200).json({ url: session.url });
 });
 
 router.post("/checking", async (req, res) => {

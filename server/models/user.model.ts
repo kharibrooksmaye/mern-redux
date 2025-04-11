@@ -56,6 +56,14 @@ const userSchema = new Schema<IUser>(
       default: "email",
       required: true,
     },
+    subscribed: {
+      type: Boolean,
+      default: false,
+    },
+    subscription: {
+      type: String,
+      default: "free",
+    },
   },
   {
     timestamps: true,

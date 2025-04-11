@@ -3,6 +3,7 @@ import BiotechIcon from "@mui/icons-material/Biotech";
 import CorporateFareIcon from "@mui/icons-material/CorporateFare";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ProfileIcon from "@mui/icons-material/AccountCircle";
+import { LocalOffer } from "@mui/icons-material";
 
 export const navbarItems = [
   {
@@ -10,29 +11,41 @@ export const navbarItems = [
     icon: <GroupIcon />,
     label: "Users",
     route: "users",
+    protected: true,
   },
   {
     id: 1,
     icon: <BiotechIcon />,
     label: "Samples",
     route: "samples",
+    protected: true,
   },
   {
     id: 2,
     icon: <CorporateFareIcon />,
     label: "Organizations",
     route: "organizations",
+    protected: true,
   },
   {
     id: 3,
     icon: <SettingsIcon />,
     label: "Settings",
     route: "settings",
+    protected: true,
   },
   {
     id: 4,
     icon: <ProfileIcon />,
     label: "Profile",
     route: "profile",
+    protected: true,
+  },
+  {
+    id: 5,
+    icon: <LocalOffer />,
+    label: "Pricing",
+    route: "pricing",
+    protected: false,
   },
 ];
