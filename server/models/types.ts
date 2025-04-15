@@ -41,5 +41,7 @@ export interface IUser extends Document {
   updatedAt: Date;
   subscribed: boolean;
   subscription: string;
+  session?: string;
+  customerId?: string;
   generateVerificationToken: () => IToken;
 }

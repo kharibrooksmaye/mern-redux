@@ -64,6 +64,14 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: "free",
     },
+    session: {
+      type: String,
+      required: false,
+    },
+    customerId: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,

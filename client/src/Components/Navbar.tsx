@@ -14,7 +14,7 @@ import { Auth } from "../@types/auth";
 import { useAuth } from "../hooks/useAuth";
 
 const Navbar = () => {
-  const isAuthenticated = useAuth(); // Get authentication status from context
+  const isAuthenticated = useAuth("Navbar"); // Get authentication status from context
   const drawerWidth = 250;
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);

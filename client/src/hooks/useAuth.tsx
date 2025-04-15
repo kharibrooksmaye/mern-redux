@@ -2,8 +2,10 @@ import axios from "axios";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Auth } from "../@types/auth";
+import { ReactJSXElement } from "@emotion/react/types/jsx-namespace";
 
-export const useAuth = () => {
+export const useAuth = (component: string) => {
+  console.log("Component:", component);
   const auth = useContext(AuthContext) as Auth;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
@@ -20,6 +22,7 @@ export const useAuth = () => {
           const {
             data: { user, token },
           } = response;
+          console.log("User authenticated:", user);
           setIsAuthenticated(true);
           auth.setUser(user);
           auth.setLoggedIn(true);

@@ -207,9 +207,31 @@ router.get("/verify", async (req, res) => {
   }
 });
 
+router.post("/create-customer", async (req, res) => {
+  const user = await User.findOne({ id: req.body.userId });
+  console.log(user);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const customer = await stripe.customers.create({
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    phone: user.phoneNumber,
+    metadata: {
+      userId: user._id.toString(),
+      username: user.username,
+    },
+  });
+  user.customerId = customer.id;
+  await user.save();
+  console.log(customer);
+  res.status(200).json({ customer });
+});
+
 router.post("/create-checkout-session", async (req, res) => {
   console.log(req.body);
-  const { stripeLookup } = req.body;
+  const { stripeLookup, customer, paymentType } = req.body;
   console.log(stripeLookup);
   const prices = await stripe.prices.list({
     lookup_keys: [stripeLookup],
@@ -222,13 +244,141 @@ router.post("/create-checkout-session", async (req, res) => {
         quantity: 1,
       },
     ],
-    mode: "subscription",
-    success_url: `${process.env.CLIENT_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
+    mode: paymentType,
+    success_url: `${process.env.CLIENT_URL}/profile?success=true&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.CLIENT_URL}/pricing?canceled=true`,
+    customer: req.body.customerId,
   });
+  console.log(session.customer, "customer");
+  console.log(session.id, "session id");
+  console.log(session);
   res.status(200).json({ url: session.url });
 });
 
+router.post("/create-portal-session", async (req, res) => {
+  const { customer } = req.body;
+
+  try {
+    const customerData = await stripe.customers.retrieve(customer);
+    if (!customerData) {
+      res.status(404).json({ error: "Customer not found" });
+    }
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: customer as string,
+      return_url: `${process.env.CLIENT_URL}/profile`,
+    });
+    res.status(200).json({ url: portalSession.url });
+  } catch (error) {
+    console.error("Error creating portal session:", error);
+    res.status(500).json({ error: "Failed to create portal session" });
+  }
+});
+
+router.post("/stripe-webhook", async (req, res) => {
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  let event = req.body;
+  if (endpointSecret) {
+    const sig = req.headers["stripe-signature"];
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } catch (err) {
+      console.error(`Webhook signature verification failed: ${err}`);
+      res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+  }
+
+  let subscription: Stripe.Subscription;
+  let status: string | undefined;
+  let lookupKey: string | undefined;
+  let session: Stripe.Checkout.Session;
+  let customer: Stripe.Customer;
+
+  const handleSubscriptionCreated = async (
+    subscription: Stripe.Subscription,
+    lookupKey: string
+  ) => {
+    const { customer } = subscription;
+    try {
+      const user = await User.findOne({ customerId: customer });
+      if (user) {
+        user.subscribed = true;
+        user.subscription = lookupKey;
+        user.save();
+      } else {
+        console.error("User not found");
+      }
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  };
+  // Handle the event
+  switch (event.type) {
+    case "customer.subscription.trial_will_end":
+      subscription = event.data.object;
+      status = subscription.status;
+      console.log(`Subscription status is ${status}.`);
+      // Then define and call a method to handle the subscription trial ending.
+      // handleSubscriptionTrialEnding(subscription);
+      break;
+    case "customer.subscription.deleted":
+      subscription = event.data.object;
+      status = subscription.status;
+      console.log(`Subscription status is ${status}.`);
+      // Then define and call a method to handle the subscription deleted.
+      // handleSubscriptionDeleted(subscriptionDeleted);
+      break;
+    case "customer.subscription.created":
+      subscription = event.data.object;
+      status = subscription.status;
+      console.log(`Subscription status is ${status}.`);
+      lookupKey = subscription.items.data[0].price.lookup_key;
+      handleSubscriptionCreated(subscription, lookupKey);
+      // Then define and call a method to handle the subscription created.
+      // handleSubscriptionCreated(subscription);
+      break;
+    case "customer.subscription.updated":
+      subscription = event.data.object;
+      status = subscription.status;
+      console.log(`Subscription status is ${status}.`);
+      lookupKey = subscription.items.data[0].price.lookup_key;
+      console.log();
+      // Then define and call a method to handle the subscription update.
+      // handleSubscriptionUpdated(subscription);
+      break;
+    case "entitlements.active_entitlement_summary.updated":
+      subscription = event.data.object;
+      console.log(`Active entitlement summary updated for ${subscription}.`);
+      // Then define and call a method to handle active entitlement summary updated
+      // handleEntitlementUpdated(subscription);
+      break;
+    case "checkout.session.async_payment_succeeded":
+      session = event.data.object;
+      console.log("Checkout session async payment succeeded:", session);
+      break;
+    case "checkout.session.completed":
+      session = event.data.object;
+      if (session.customer) {
+        const user = await User.findOne({ stripeCustomerId: session.customer });
+        if (user) {
+          user.subscribed = true;
+          user.session = session.id;
+          await user.save();
+        } else {
+        }
+      }
+      console.log("Checkout session completed:", session);
+      break;
+    case "customer.created":
+      customer = event.data.object;
+      console.log("Customer created:", customer);
+      break;
+    default:
+      console.warn(`Unhandled event type ${event.type}`);
+  }
+
+  res.send();
+});
 router.post("/checking", async (req, res) => {
   const authContact =
     req.body.authMethod === "sms"

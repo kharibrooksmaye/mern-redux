@@ -43,9 +43,26 @@ const Profile = () => {
   const [hover, setHover] = useState(false);
   const [edit, setEdit] = useState(false);
   const [updatedProperties, setUpdatedProperties] = useState<{}>({});
+  const [success, setSuccess] = useState(false);
+  const [sessionId, setSessionId] = useState("");
 
   const disabled = JSON.stringify(user) === JSON.stringify(localUser);
 
+  const saveSessionId = async (sessionId: string) => {
+    try {
+      const { data } = await axios.put(
+        `http://localhost:5000/api/users/${user?._id}/session`,
+        { sessionId }
+      );
+      if (data.success) {
+        setUser(data.user);
+        setLocalUser(data.user);
+        console.log("Session ID saved successfully");
+      }
+    } catch (error) {
+      console.error("Error saving session ID:", error);
+    }
+  };
   const handleSubmit = async (e: React.FormEvent<FormElement>) => {
     e.preventDefault();
     const newUser = { ...localUser };
@@ -84,13 +101,42 @@ const Profile = () => {
     }
   };
 
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("success")) {
+      setSuccess(true);
+      setSessionId(query.get("session_id") || "");
+      saveSessionId(query.get("session_id") || "");
+    }
+    if (query.get("canceled")) {
+      setSuccess(false);
+    }
+
+    if (localUser?.session) {
+      setSessionId(localUser?.session);
+    }
+  }, [sessionId]);
+
   const fullName =
     localUser?.firstName || localUser?.lastName
       ? `${localUser?.firstName} ${localUser?.lastName}`
       : "User";
 
+  const manageSubscription = async (customer: string) => {
+    const { data } = await axios.post(
+      "http://localhost:5000/api/create-portal-session",
+      {
+        customer,
+      }
+    );
+
+    const { url } = data;
+    if (url) {
+      window.location.replace(url);
+    }
+  };
   return (
-    <Grid display="flex" container flexDirection="column">
+    <Grid container flexDirection="column">
       <Grid item>
         <Card sx={{ margin: "10px 25px", padding: "25px" }}>
           <Typography variant="h5">Your Profile</Typography>
@@ -174,9 +220,21 @@ const Profile = () => {
               justifyContent="flex-start"
               flexDirection="column"
             >
+              {user?.customerId && user?.subscribed && (
+                <Button
+                  variant="contained"
+                  onClick={() => manageSubscription(user?.customerId)}
+                >
+                  Manage Subscription
+                </Button>
+              )}
               {user &&
                 Object.keys(user).map((field) => {
-                  if (["isActivated", "2fa", "admin"].includes(field)) {
+                  if (
+                    ["isActivated", "2fa", "admin", "subscribed"].includes(
+                      field
+                    )
+                  ) {
                     return (
                       <FormGroup key={field}>
                         <FormControlLabel
@@ -230,6 +288,7 @@ const Profile = () => {
                       "__v",
                       "firstName",
                       "lastName",
+                      "session",
                     ].includes(field)
                   )
                     return;
@@ -246,6 +305,9 @@ const Profile = () => {
                       defaultValue={user[field as keyof User]}
                       InputLabelProps={{ shrink: true }}
                       key={field}
+                      InputProps={{
+                        readOnly: field === "customerId",
+                      }}
                     />
                   );
                 })}

@@ -30,7 +30,7 @@ import { useAuth } from "./hooks/useAuth";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
   const auth = useContext(AuthContext) as Auth;
-  const isAuthenticated = useAuth();
+  const isAuthenticated = useAuth("PrivateRoute");
   const location = useLocation();
   if (isAuthenticated === null) {
     return (

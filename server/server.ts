@@ -52,6 +52,7 @@ process.on("unhandledRejection", (error) => {
   // application specific logging, throwing an error, or other logic here
 });
 
+app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
 app.use(
   express.json({
     verify(req: CustomRequest, res, buf) {
