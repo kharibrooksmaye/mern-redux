@@ -293,17 +293,28 @@ router.post("/stripe-webhook", async (req, res) => {
   let session: Stripe.Checkout.Session;
   let customer: Stripe.Customer;
 
-  const handleSubscriptionCreated = async (
-    subscription: Stripe.Subscription,
-    lookupKey: string
-  ) => {
+  const handleSubscription = async (action: string) => {
+    subscription = event.data.object;
+    status = subscription.status;
+    lookupKey = subscription.items.data[0].price.lookup_key;
     const { customer } = subscription;
     try {
       const user = await User.findOne({ customerId: customer });
       if (user) {
-        user.subscribed = true;
-        user.subscription = lookupKey;
+        switch (action) {
+          case "deleted":
+            user.subscribed = false;
+            user.subscription = "free";
+            break;
+          default:
+            user.subscribed = true;
+            user.subscription = lookupKey;
+            break;
+        }
         user.save();
+        console.log(
+          `Subscription status is ${status}. Subscription ${subscription.id} successfully ${action}`
+        );
       } else {
         console.error("User not found");
       }
@@ -322,29 +333,13 @@ router.post("/stripe-webhook", async (req, res) => {
       // handleSubscriptionTrialEnding(subscription);
       break;
     case "customer.subscription.deleted":
-      subscription = event.data.object;
-      status = subscription.status;
-      console.log(`Subscription status is ${status}.`);
-      // Then define and call a method to handle the subscription deleted.
-      // handleSubscriptionDeleted(subscriptionDeleted);
+      handleSubscription("deleted");
       break;
     case "customer.subscription.created":
-      subscription = event.data.object;
-      status = subscription.status;
-      console.log(`Subscription status is ${status}.`);
-      lookupKey = subscription.items.data[0].price.lookup_key;
-      handleSubscriptionCreated(subscription, lookupKey);
-      // Then define and call a method to handle the subscription created.
-      // handleSubscriptionCreated(subscription);
+      handleSubscription("created");
       break;
     case "customer.subscription.updated":
-      subscription = event.data.object;
-      status = subscription.status;
-      console.log(`Subscription status is ${status}.`);
-      lookupKey = subscription.items.data[0].price.lookup_key;
-      console.log();
-      // Then define and call a method to handle the subscription update.
-      // handleSubscriptionUpdated(subscription);
+      handleSubscription("updated");
       break;
     case "entitlements.active_entitlement_summary.updated":
       subscription = event.data.object;

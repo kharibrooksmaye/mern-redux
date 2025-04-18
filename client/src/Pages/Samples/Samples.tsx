@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { Record } from "../../@types/record";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -12,11 +13,12 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import { Check, Inventory, Pending, Upload } from "@mui/icons-material";
+import { Check, Info, Inventory, Pending, Upload } from "@mui/icons-material";
 import DocUpload from "../../Components/Upload";
 import { v4 as uuidv4 } from "uuid";
 import { AuthContext } from "../../context/AuthContext";
 import { Auth } from "../../@types/auth";
+import { subscriptionTiers } from "../../Components/Constants/subscriptionTiers";
 
 const Samples = () => {
   const [records, setRecords] = useState<Record[]>([]);
@@ -40,26 +42,6 @@ const Samples = () => {
 
     fetchRecords();
   }, []);
-
-  const uploadFile = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      console.log("File uploaded successfully:", response.data);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-    }
-  };
 
   const createRecord = async () => {
     if (!user) return;
@@ -91,6 +73,13 @@ const Samples = () => {
     ];
   };
 
+  const userTier = subscriptionTiers.find(
+    (tier) => tier.stripeLookup === user?.subscription
+  );
+
+  const remainingUploads =
+    userTier && userTier.samples ? userTier.samples - records.length : 0;
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
@@ -105,7 +94,7 @@ const Samples = () => {
             textAlign: "center",
           }}
         >
-          <CardContent>
+          <CardContent sx={{ display: "inline-flex", flexDirection: "column" }}>
             {records.length === 0 && (
               <>
                 <Typography variant="h6" gutterBottom>
@@ -117,11 +106,23 @@ const Samples = () => {
               </>
             )}
 
+            {userTier?.stripeLookup !== "gold_monthly" && (
+              <Alert
+                icon={<Info fontSize="medium" />}
+                severity="info"
+                sx={{ display: "inline-flex" }}
+              >
+                {userTier
+                  ? `You can upload ${remainingUploads} more sample(s) with your current subscription tier (${userTier.stripeLookup}).`
+                  : "Unable to determine your subscription tier."}
+              </Alert>
+            )}
+
             <Button
               variant="contained"
               color="success"
               startIcon={<Upload />}
-              sx={{ marginTop: 2 }}
+              sx={{ marginTop: 2, alignSelf: "center" }}
               onClick={() => {
                 console.log("Upload samples button clicked");
                 // Add your upload logic here
@@ -270,7 +271,7 @@ const Samples = () => {
           <Typography variant="h6" gutterBottom>
             Uploaded Samples for Record ID: {record.id}
           </Typography>
-          <Grid xs={12} sm={6} md={4} sx={{ padding: "16px" }}>
+          <Grid item sx={{ padding: "16px" }}>
             {record.specimens.map((specimen, index) => (
               <Card
                 key={index}
