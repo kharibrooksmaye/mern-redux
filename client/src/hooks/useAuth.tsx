@@ -5,7 +5,6 @@ import { Auth } from "../@types/auth";
 import { ReactJSXElement } from "@emotion/react/types/jsx-namespace";
 
 export const useAuth = (component: string) => {
-  console.log("Component:", component);
   const auth = useContext(AuthContext) as Auth;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 

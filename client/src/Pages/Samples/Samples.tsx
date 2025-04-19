@@ -9,6 +9,7 @@ import {
   CardActionArea,
   CardActions,
   CardContent,
+  CircularProgress,
   Grid,
   IconButton,
   Typography,
@@ -23,6 +24,7 @@ import { subscriptionTiers } from "../../Components/Constants/subscriptionTiers"
 const Samples = () => {
   const [records, setRecords] = useState<Record[]>([]);
   const [record, setRecord] = useState<Record | null>(null);
+  const [loading, setLoading] = useState(true);
   const [toggleUpload, setToggleUpload] = useState(false);
   const [toggleView, setToggleView] = useState(false);
 
@@ -35,6 +37,7 @@ const Samples = () => {
           "http://localhost:5000/api/records"
         );
         setRecords(response.data);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching records:", error);
       }
@@ -54,6 +57,17 @@ const Samples = () => {
       setRecord(record.data);
     } catch (error) {
       console.error("Error creating record:", error);
+    }
+  };
+
+  const handleDeleteRecord = async (recordId: string) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/records/${recordId}`);
+      setRecords((prevRecords) =>
+        prevRecords.filter((record) => record.id !== recordId)
+      );
+    } catch (error) {
+      console.error("Error deleting record:", error);
     }
   };
 
@@ -95,7 +109,8 @@ const Samples = () => {
           }}
         >
           <CardContent sx={{ display: "inline-flex", flexDirection: "column" }}>
-            {records.length === 0 && (
+            {loading && <CircularProgress size="3x" />}
+            {!loading && records.length === 0 && (
               <>
                 <Typography variant="h6" gutterBottom>
                   No samples available
@@ -118,20 +133,22 @@ const Samples = () => {
               </Alert>
             )}
 
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<Upload />}
-              sx={{ marginTop: 2, alignSelf: "center" }}
-              onClick={() => {
-                console.log("Upload samples button clicked");
-                // Add your upload logic here
-                setToggleUpload(!toggleUpload);
-                createRecord();
-              }}
-            >
-              Upload Samples
-            </Button>
+            {!loading && (
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<Upload />}
+                sx={{ alignSelf: "center" }}
+                onClick={() => {
+                  console.log("Upload samples button clicked");
+                  // Add your upload logic here
+                  setToggleUpload(!toggleUpload);
+                  createRecord();
+                }}
+              >
+                Upload Samples
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -222,17 +239,6 @@ const Samples = () => {
                               : "View "}{" "}
                             Record
                           </Button>
-                          <Button
-                            variant="contained"
-                            color="warning"
-                            sx={{ margin: "16px" }}
-                            onClick={() => {
-                              console.log("Delete record button clicked");
-                              // Add your edit logic here
-                            }}
-                          >
-                            Delete Record
-                          </Button>
                         </>
                       ) : (
                         <Button
@@ -249,6 +255,17 @@ const Samples = () => {
                           Upload Samples
                         </Button>
                       )}
+                      <Button
+                        variant="contained"
+                        color="warning"
+                        sx={{ margin: "16px" }}
+                        onClick={() => {
+                          console.log("Delete record button clicked");
+                          handleDeleteRecord(recordItem.id);
+                        }}
+                      >
+                        Delete Record
+                      </Button>
                     </CardActions>
                   </Card>
                 </Grid>

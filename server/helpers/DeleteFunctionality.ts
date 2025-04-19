@@ -1,15 +1,15 @@
 const { Storage } = require("@google-cloud/storage");
-const zephyr = new Storage({
-  keyFilename: "./Zephyr.json",
-  projectId: "zephyrd",
+const mernReduxStorage = new Storage({
+  keyFilename: "./mernRedux.json",
+  projectId: "mern-redux-361607",
 });
 const Doc = require("../models/documents.model");
 const Record = require("../models/records.model");
-const zephyrinput = zephyr.bucket("zephyrinput");
-const zephyroutput = zephyr.bucket("zephyroutput");
+const mernReduxInput = mernReduxStorage.bucket("mern_redux_input");
+const mernReduxOutput = mernReduxStorage.bucket("mern_redux_output");
 
 const deleteGoogleRecords = async (userid: string, recordId: string) => {
-  let [inputfiles] = await zephyrinput.getFiles({
+  let [inputfiles] = await mernReduxInput.getFiles({
     autoPaginate: false,
     prefix: `${userid}/${recordId}`,
   });
@@ -18,7 +18,7 @@ const deleteGoogleRecords = async (userid: string, recordId: string) => {
     const [metadata] = await file.getMetadata();
     inputresults.push(metadata);
   }
-  let [outputfiles] = await zephyroutput.getFiles({
+  let [outputfiles] = await mernReduxOutput.getFiles({
     autoPaginate: false,
     prefix: `${userid}/${recordId}`,
   });
@@ -32,14 +32,14 @@ const deleteGoogleRecords = async (userid: string, recordId: string) => {
     console.log(item.name);
   });
   all.forEach(async (item) => {
-    if (item.id.includes("zephyrinput")) {
-      const file = zephyrinput.file(item.name);
-      console.log("zephyrinput", file.name);
+    if (item.id.includes("mern_redux_input")) {
+      const file = mernReduxInput.file(item.name);
+      console.log("mern_redux_input", file.name);
       await file.delete();
     }
-    if (item.id.includes("zephyroutput")) {
-      const file = zephyroutput.file(item.name);
-      console.log("zephyroutput", file.name);
+    if (item.id.includes("mern_redux_output")) {
+      const file = mernReduxOutput.file(item.name);
+      console.log("mern_redux_output", file.name);
       await file.delete();
     }
   });

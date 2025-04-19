@@ -17,8 +17,8 @@ interface AdminData {
   tasks: any;
 }
 const auth = new google.auth.GoogleAuth({
-  projectId: "zephyrd",
-  keyFilename: "./modules/Zephyr.json",
+  projectId: "mern-redux-361607",
+  keyFilename: "./modules/mernRedux.json",
   scopes: ["https://www.googleapis.com/auth/compute"],
 });
 const transloadit = new TransloaditClient({
@@ -32,13 +32,13 @@ import Doc from "../models/documents.model";
 import Record from "../models/records.model";
 import * as cloudTasks from "@google-cloud/tasks";
 const taskClient = new cloudTasks.v2beta3.CloudTasksClient({
-  keyFileName: "./modules/Zephyr.json",
+  keyFileName: "./modules/mernRedux.json",
 });
 
 const parent = taskClient.queuePath(
-  "zephyrd",
+  "mern-redux-361607",
   "us-central1",
-  "zephyr-queue-new"
+  "mern-redux-queue-new"
 );
 console.log(parent);
 const taskrequest = {
@@ -62,7 +62,7 @@ router.get("/event", async (req, res) => {
     });
     let tasksData = tasks.data;
     const newVMs = await compute.instances.list({
-      project: "zephyrd",
+      project: "mern-redux-361607",
       zone: "us-east1-c",
       maxResults: 500,
     });
@@ -134,7 +134,7 @@ router.get("/event", async (req, res) => {
 router.get("/gce", async (req, res) => {
   try {
     const newVMs = await compute.instances.list({
-      project: "zephyrd",
+      project: "mern-redux-361607",
       zone: "us-east1-c",
       maxResults: 500,
     });

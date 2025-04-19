@@ -163,7 +163,7 @@ router.post("/transloadit", async (req, res) => {
           recordId: assembly.fields.record_id,
           encoded: obj.ssl_url,
           info: obj,
-          thumb: `https://storage.googleapis.com/zephyroutput${obj.original_path}${obj.basename}.jpg`,
+          thumb: `https://storage.googleapis.com/mernReduxOutput${obj.original_path}${obj.basename}.jpg`,
         });
         const savedDoc = await document.save();
         console.log(`ipad - ${i}`);
