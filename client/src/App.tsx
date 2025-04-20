@@ -4,9 +4,19 @@ import "./App.css";
 import Navbar from "./Components/Navbar";
 import { Outlet } from "react-router";
 import Home from "./Pages/Home/Home";
-import { Box, CircularProgress } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+} from "@mui/material";
+import { Link } from "react-router-dom";
 import AuthProvider, { AuthContext } from "./context/AuthContext";
 import { Auth } from "./@types/auth";
+import { headerItems } from "./Components/Constants/navbarItems";
+import Header from "./Components/Header";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -40,8 +50,10 @@ function App() {
       }}
       className="App"
     >
-      <Navbar />
-      {isLoading ? loadingScreen : <Outlet />}
+      <Box sx={{ marginBottom: "80px" }}>
+        <Navbar />
+        {isLoading ? loadingScreen : <Outlet />}
+      </Box>
     </Box>
   );
 }

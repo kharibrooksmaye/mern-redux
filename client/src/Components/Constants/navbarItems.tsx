@@ -34,5 +34,13 @@ export const navbarItems = [
     icon: <ProfileIcon />,
     label: "Profile",
     route: "profile",
+    protected: true,
   },
+];
+
+export const headerItems = [
+  { label: "Home", to: "/" },
+  { label: "About Us", to: "/about" },
+  { label: "Pricing", to: "/pricing" },
+  { label: "Contact Us", to: "/contact" },
 ];

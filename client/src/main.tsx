@@ -27,6 +27,8 @@ import Pricing from "./Components/Pricing";
 import Register from "./Components/Register";
 import { Auth } from "./@types/auth";
 import { useAuth } from "./hooks/useAuth";
+import About from "./Pages/About";
+import Contact from "./Pages/Contact";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
   const auth = useContext(AuthContext) as Auth;
@@ -65,6 +67,8 @@ root.render(
             <Route path="register" element={<Register />} />
             <Route path="blog" element={<Blog />} />
             <Route path="products" element={<Products />} />
+            <Route path="about" element={<About />} />
+            <Route path="contact" element={<Contact />} />
             <Route path="pricing" element={<Pricing />} />
             <Route element={<PrivateRoute />}>
               <Route path="users" element={<Users />} />

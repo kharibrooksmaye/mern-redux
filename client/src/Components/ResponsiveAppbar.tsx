@@ -31,6 +31,7 @@ import {
   Search,
 } from "@mui/icons-material";
 import { InputUnstyled, InputUnstyledProps } from "@mui/base";
+import { headerItems } from "./Constants/navbarItems";
 
 const ResponsiveAppBar = ({
   setOpen,
@@ -43,22 +44,6 @@ const ResponsiveAppBar = ({
 }) => {
   const { loggedIn, logout } = React.useContext(AuthContext) as Auth;
   const navigate = useNavigate();
-
-  const pages = [
-    { label: "Home", route: "" },
-    {
-      label: "Products",
-      route: "products",
-    },
-    {
-      label: "Pricing",
-      route: "pricing",
-    },
-    {
-      label: "Blog",
-      route: "blog",
-    },
-  ];
 
   const settings = loggedIn
     ? [
@@ -167,7 +152,7 @@ const ResponsiveAppBar = ({
       sx={{
         backgroundColor: darkMode ? "#121212" : "transparent",
         boxShadow: "none",
-        marginBottom: "20px",
+        marginBottom: "100px",
       }}
     >
       <Toolbar sx={{ marginTop: "16px" }}>
@@ -211,39 +196,39 @@ const ResponsiveAppBar = ({
               )}
             </Breadcrumbs>
             <Typography variant="h4" fontWeight={700}>
-              NFT Marketplace
+              MERN-Redux
             </Typography>
           </Box>
         </Box>
 
-        {/* <Box
-            sx={{
-              flexGrow: 1,
-              marginLeft: "20px",
-              display: { xs: "none", md: "flex" },
-              justifyContent: "flex-end",
-            }}
-          >
-            {pages.map((page) => (
-              <Button
-                key={page.label}
-                onClick={() => handleCloseNavMenu(page.route)}
-                sx={{
-                  my: 2,
-                  mr: 1,
-                  display: "block",
-                  backgroundColor: "primary.main",
-                  color: "primary.dark",
-                  "&: hover": {
-                    backgroundColor: "primary.light",
-                    fontWeight: 700,
-                  },
-                }}
-              >
-                {page.label}
-              </Button>
-            ))}
-          </Box> */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            marginLeft: "20px",
+            display: { xs: "none", md: "flex" },
+            justifyContent: "flex-end",
+          }}
+        >
+          {headerItems.map((page) => (
+            <Button
+              key={page.label}
+              onClick={() => handleCloseNavMenu(page.to)}
+              variant="text"
+              sx={{
+                my: 2,
+                mr: 1,
+                display: "block",
+                color: "primary.dark",
+                "&: hover": {
+                  backgroundColor: "primary.light",
+                  fontWeight: 700,
+                },
+              }}
+            >
+              {page.label}
+            </Button>
+          ))}
+        </Box>
         <Box
           sx={{
             flexGrow: 1,
