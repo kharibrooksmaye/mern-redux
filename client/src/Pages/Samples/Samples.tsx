@@ -2,25 +2,29 @@ import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { Record } from "../../@types/record";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardActionArea,
   CardActions,
   CardContent,
+  CircularProgress,
   Grid,
   IconButton,
   Typography,
 } from "@mui/material";
-import { Check, Inventory, Pending, Upload } from "@mui/icons-material";
+import { Check, Info, Inventory, Pending, Upload } from "@mui/icons-material";
 import DocUpload from "../../Components/Upload";
 import { v4 as uuidv4 } from "uuid";
 import { AuthContext } from "../../context/AuthContext";
 import { Auth } from "../../@types/auth";
+import { subscriptionTiers } from "../../Components/Constants/subscriptionTiers";
 
 const Samples = () => {
   const [records, setRecords] = useState<Record[]>([]);
   const [record, setRecord] = useState<Record | null>(null);
+  const [loading, setLoading] = useState(true);
   const [toggleUpload, setToggleUpload] = useState(false);
   const [toggleView, setToggleView] = useState(false);
 
@@ -33,6 +37,7 @@ const Samples = () => {
           "http://localhost:5000/api/records"
         );
         setRecords(response.data);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching records:", error);
       }
@@ -40,26 +45,6 @@ const Samples = () => {
 
     fetchRecords();
   }, []);
-
-  const uploadFile = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      console.log("File uploaded successfully:", response.data);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-    }
-  };
 
   const createRecord = async () => {
     if (!user) return;
@@ -72,6 +57,17 @@ const Samples = () => {
       setRecord(record.data);
     } catch (error) {
       console.error("Error creating record:", error);
+    }
+  };
+
+  const handleDeleteRecord = async (recordId: string) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/records/${recordId}`);
+      setRecords((prevRecords) =>
+        prevRecords.filter((record) => record.id !== recordId)
+      );
+    } catch (error) {
+      console.error("Error deleting record:", error);
     }
   };
 
@@ -91,6 +87,13 @@ const Samples = () => {
     ];
   };
 
+  const userTier = subscriptionTiers.find(
+    (tier) => tier.stripeLookup === user?.subscription
+  );
+
+  const remainingUploads =
+    userTier && userTier.samples ? userTier.samples - records.length : 0;
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
@@ -105,8 +108,9 @@ const Samples = () => {
             textAlign: "center",
           }}
         >
-          <CardContent>
-            {records.length === 0 && (
+          <CardContent sx={{ display: "inline-flex", flexDirection: "column" }}>
+            {loading && <CircularProgress size="3x" />}
+            {!loading && records.length === 0 && (
               <>
                 <Typography variant="h6" gutterBottom>
                   No samples available
@@ -117,20 +121,34 @@ const Samples = () => {
               </>
             )}
 
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<Upload />}
-              sx={{ marginTop: 2 }}
-              onClick={() => {
-                console.log("Upload samples button clicked");
-                // Add your upload logic here
-                setToggleUpload(!toggleUpload);
-                createRecord();
-              }}
-            >
-              Upload Samples
-            </Button>
+            {userTier?.stripeLookup !== "gold_monthly" && (
+              <Alert
+                icon={<Info fontSize="medium" />}
+                severity="info"
+                sx={{ display: "inline-flex" }}
+              >
+                {userTier
+                  ? `You can upload ${remainingUploads} more sample(s) with your current subscription tier (${userTier.stripeLookup}).`
+                  : "Unable to determine your subscription tier."}
+              </Alert>
+            )}
+
+            {!loading && (
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<Upload />}
+                sx={{ alignSelf: "center" }}
+                onClick={() => {
+                  console.log("Upload samples button clicked");
+                  // Add your upload logic here
+                  setToggleUpload(!toggleUpload);
+                  createRecord();
+                }}
+              >
+                Upload Samples
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -221,17 +239,6 @@ const Samples = () => {
                               : "View "}{" "}
                             Record
                           </Button>
-                          <Button
-                            variant="contained"
-                            color="warning"
-                            sx={{ margin: "16px" }}
-                            onClick={() => {
-                              console.log("Delete record button clicked");
-                              // Add your edit logic here
-                            }}
-                          >
-                            Delete Record
-                          </Button>
                         </>
                       ) : (
                         <Button
@@ -248,6 +255,17 @@ const Samples = () => {
                           Upload Samples
                         </Button>
                       )}
+                      <Button
+                        variant="contained"
+                        color="warning"
+                        sx={{ margin: "16px" }}
+                        onClick={() => {
+                          console.log("Delete record button clicked");
+                          handleDeleteRecord(recordItem.id);
+                        }}
+                      >
+                        Delete Record
+                      </Button>
                     </CardActions>
                   </Card>
                 </Grid>
@@ -270,7 +288,7 @@ const Samples = () => {
           <Typography variant="h6" gutterBottom>
             Uploaded Samples for Record ID: {record.id}
           </Typography>
-          <Grid xs={12} sm={6} md={4} sx={{ padding: "16px" }}>
+          <Grid item sx={{ padding: "16px" }}>
             {record.specimens.map((specimen, index) => (
               <Card
                 key={index}

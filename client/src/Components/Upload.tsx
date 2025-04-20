@@ -32,7 +32,6 @@ const DocUpload = ({
   toggleUpload,
   setToggleUpload,
 }: DocUploadProps) => {
-  console.log(import.meta.env.VITE_TRANSLOADIT_AUTH_KEY);
   const [uppy] = useState(() =>
     new Uppy({
       debug: true,
@@ -54,7 +53,7 @@ const DocUpload = ({
     })
   );
 
-  const isAuthenticated = useAuth();
+  const isAuthenticated = useAuth("Upload");
   const { user, loggedIn, token, login, setMessage, isLoading } = useContext(
     AuthContext
   ) as Auth;
@@ -85,7 +84,7 @@ const DocUpload = ({
     if (!record || !user) return;
     try {
       if (!uploaded) {
-        await axios.put(
+        const data = await axios.put(
           `http://localhost:5000/api/records/${record.id}/upload/finish`,
           {
             recordId: record.id,
@@ -93,11 +92,11 @@ const DocUpload = ({
             uploaded: true,
           }
         );
+        console.log("Record updated successfully:", data.data);
         setUploaded(true);
       }
-      if (visible) {
-        setVisible(!visible);
-      }
+      console.log("updated record", visible);
+      setToggleUpload(!toggleUpload);
     } catch (err) {
       console.log("Error: " + err);
     }
@@ -120,7 +119,7 @@ const DocUpload = ({
       const transloaditResult = result.transloadit as { [key: string]: any }[];
       const results = transloaditResult[0].results;
       const encoded = results[":original"];
-      const thumbs = results.thumb;
+      const thumbs = results.thumbs;
 
       console.log(result);
       encoded.forEach((vid: { ssl_url: string; original_basename: string }) => {

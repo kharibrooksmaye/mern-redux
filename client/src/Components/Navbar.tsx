@@ -9,11 +9,10 @@ import RouterLink from "./RouterLink";
 import { useAuth } from "../hooks/useAuth";
 
 const Navbar = () => {
+  const isAuthenticated = useAuth("Navbar"); // Get authentication status from context
   const drawerWidth = 250;
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
-  const isAuthenticated = useAuth();
-
   return (
     <Box>
       <ResponsiveAppBar
@@ -62,17 +61,6 @@ const Navbar = () => {
             }
           })}
         </List>
-        {/* <Divider />
-        <List>
-          {["All mail", "Trash", "Spam"].map((item, index) => (
-            <ListItem button key={item}>
-              <ListItemIcon>
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-              </ListItemIcon>
-              <ListItemText primary={item} />
-            </ListItem>
-          ))}
-        </List> */}
       </Drawer>
     </Box>
   );

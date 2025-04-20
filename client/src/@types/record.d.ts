@@ -10,7 +10,7 @@ interface Specimen {
 export interface Record {
   id: string;
   upload: boolean;
-  specimens?: Specimen[];
+  specimens: Specimen[];
   specimensLength?: number;
   uploaded: boolean;
   userid: string;

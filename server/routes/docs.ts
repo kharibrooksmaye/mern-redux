@@ -1,14 +1,14 @@
 import express from "express";
 import { Storage } from "@google-cloud/storage";
-import Doc from "../models/documents.model.js";
+import Doc from "../models/documents.model";
 
 const router = express.Router();
 
-const zephyr = new Storage({
-  keyFilename: "./modules/Zephyr.json",
-  projectId: "zephyrwebsite-272000",
+const mernReduxStorage = new Storage({
+  keyFilename: "./modules/mernRedux.json",
+  projectId: "mern-redux-361607",
 });
-const bucket = zephyr.bucket("zephyroutput");
+const bucket = mernReduxStorage.bucket("mern_redux_output");
 
 // router.route('/').get((req, res) => {
 //   Doc.find()

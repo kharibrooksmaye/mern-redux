@@ -126,5 +126,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+
 # Zephyr configuration file
 Zephyr.json
+mernRedux.json

@@ -39,5 +39,9 @@ export interface IUser extends Document {
   authMethod: string;
   createdAt: Date;
   updatedAt: Date;
+  subscribed: boolean;
+  subscription: string;
+  session?: string;
+  customerId?: string;
   generateVerificationToken: () => IToken;
 }

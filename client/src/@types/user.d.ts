@@ -12,4 +12,8 @@ export type User = {
   records: Array<Object>;
   admin: boolean;
   authMethod: string;
+  subscribed: boolean;
+  subscription: string;
+  session: string;
+  customerId: string;
 } | null;

@@ -7,34 +7,40 @@ import Doc from "../models/documents.model";
 import Record from "../models/records.model";
 
 const router = express.Router();
-const zephyr = new Storage({
-  keyFilename: "./modules/Zephyr.json",
-  projectId: "zephyrd",
+const mernReduxStorage = new Storage({
+  keyFilename: "./modules/mernRedux.json",
+  projectId: "mern-redux-361607",
 });
 const auth = new google.auth.GoogleAuth({
-  keyFilename: "./modules/Zephyr.json",
-  projectId: "zephyrd",
+  keyFilename: "./modules/mernRedux.json",
+  projectId: "mern-redux-361607",
 });
 const compute = google.compute({ version: "v1", auth });
 const pubSubClient = new PubSub({
-  keyFilename: "./modules/Zephyr.json",
-  projectId: "zephyrd",
+  keyFilename: "./modules/mernRedux.json",
+  projectId: "mern-redux-361607",
 });
-const copyFile = async (userid, recordid) => {
-  await zephyr
-    .bucket("testinggggg")
-    .file("uploadcomplete.txt")
-    .copy(
-      zephyr
-        .bucket("zephyrinput")
-        .file(`${userid}/${recordid}/uploadcomplete.txt`)
-    );
+const copyFile = async (userid: string, recordid: string) => {
+  try {
+    const data = await mernReduxStorage
+      .bucket("mern_redux_test_bucket")
+      .file("uploadcomplete.txt")
+      .copy(
+        mernReduxStorage
+          .bucket("mern_redux_input")
+          .file(`${userid}/${recordid}/uploadcomplete.txt`)
+      );
+    console.log("File copied successfully");
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const getFiles = async (userid: string, recordid: string) => {
   try {
-    const results = await zephyr
-      .bucket("zephyroutput")
+    const results = await mernReduxStorage
+      .bucket("mern_redux_output")
       .getFiles({ prefix: `${userid}/${recordid}` });
     if (results.length > 0 && results[0].length === 0) {
       return false;
@@ -195,7 +201,7 @@ router.post("/:id/republish", async (req, res) => {
       userid: req.body.user_id,
     };
     const newVMs = await compute.instances.list({
-      project: "zephyrd",
+      project: "mern-redux-361607",
       zone: "us-east4-c",
       maxResults: 500,
     });
@@ -217,7 +223,7 @@ router.post("/tasktest", async (req, res) => {
       userid: req.body.user_id,
     };
     const newVMs = await compute.instances.list({
-      project: "zephyrd",
+      project: "mern-redux-361607",
       zone: "us-east4-c",
       maxResults: 500,
     });
@@ -236,33 +242,36 @@ router.post("/tasktest", async (req, res) => {
 });
 // finish upload process and pass to VM
 router.put("/:id/upload/finish", async (req, res) => {
-  console.log(req.body);
   try {
     let record = await Record.findOne({ id: req.params.id });
+    if (!record) {
+      res.status(404).send("Record not found");
+    }
     let length = record.specimens.length;
     let newRecord = await Record.findOneAndUpdate(
       { id: req.params.id },
       { $set: { specimensLength: length, uploaded: true } },
       { new: true }
     );
-    await copyFile(newRecord.userid, newRecord.id);
-    const task = {
-      id: req.body.recordId,
-      userid: req.body.userId,
-      volume: record.volume,
-      fields: length,
-    };
-    const newVMs = await compute.instances.list({
-      project: "zephyrd",
-      zone: "us-east4-c",
-      maxResults: 500,
-    });
-    const data = newVMs.data.items;
-    const running = data.filter((vm) => vm.status === "RUNNING");
-    console.log(running.length);
-    if (running && running.length < 5) {
-      await publishMessage(task);
-    }
+    const data = await copyFile(newRecord.userid, newRecord.id);
+
+    // const task = {
+    //   id: req.body.recordId,
+    //   userid: req.body.userId,
+    //   volume: record.volume,
+    //   fields: length,
+    // };
+    // const newVMs = await compute.instances.list({
+    //   project: "mern-redux-361607",
+    //   zone: "us-east4-c",
+    //   maxResults: 500,
+    // });
+    // const data = newVMs.data.items;
+    // const running = data.filter((vm) => vm.status === "RUNNING");
+    // console.log(running.length);
+    // if (running && running.length < 5) {
+    //   await publishMessage(task);
+    // }
     res.status(200).send("Uploaded Specimens");
   } catch (error) {
     console.log(error);
