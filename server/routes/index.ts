@@ -14,13 +14,8 @@ import Record from "../models/records.model";
 import Doc from "../models/documents.model";
 import { IRecord, IUser } from "../models/types";
 import Transloadit, { Assembly } from "transloadit";
-import {
-  BitwardenClient,
-  ClientSettings,
-  DeviceType,
-  LogLevel,
-} from "@bitwarden/sdk-napi";
 import { VerificationListInstanceCreateOptions } from "twilio/lib/rest/verify/v2/service/verification";
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 dotenv.config();
 
@@ -35,26 +30,27 @@ const client = twilio(accountSid, authToken);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-03-31.basil",
 });
-const clientSettings = {
-  apiUrl: process.env.BW_API_URL,
-  identityUrl: process.env.BW_IDENTITY_URL,
-  userAgent: "Bitwarden SDK",
-  deviceType: DeviceType.SDK,
-};
 
 const handleSecret = async () => {
-  const bitwardenClient = new BitwardenClient(clientSettings);
-  if (!process.env.BW_ACCESS_TOKEN) {
-    throw new Error("No access token provided");
-  }
-  if (!process.env.JWT_SECRET_ID) {
-    throw new Error("No secret id provided");
-  }
-  await bitwardenClient.auth().loginAccessToken(process.env.BW_ACCESS_TOKEN);
+  const secretManager = new SecretManagerServiceClient({
+    keyFilename: "./modules/mernRedux.json",
+  });
 
-  const secret = await bitwardenClient.secrets().get(process.env.JWT_SECRET_ID);
+  try {
+    const [secret] = await secretManager.accessSecretVersion({
+      name: process.env.JWT_SECRET_NAME,
+    });
 
-  return secret.value;
+    const payload = secret.payload.data.toString();
+    if (!process.env.JWT_SECRET_NAME) {
+      throw new Error("No secret id provided");
+    }
+
+    return payload;
+  } catch (error) {
+    console.error("Error accessing secret version:", error);
+    throw new Error("Failed to access secret version");
+  }
 };
 
 const createTokenFromUser = (user: IUser) => ({

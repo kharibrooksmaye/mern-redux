@@ -20,7 +20,7 @@ const Home = () => {
           }}
         >
           <Typography variant="h4" component="h1" color="primary.contrast">
-            A Typescript React Application
+            MERN Typescript GCP App
           </Typography>
           <Typography
             sx={{ marginTop: "20px" }}
@@ -35,6 +35,7 @@ const Home = () => {
             color="secondary"
             size="large"
             sx={{ marginTop: "20px" }}
+            href="/demo"
           >
             Get Started
           </CommonButton>

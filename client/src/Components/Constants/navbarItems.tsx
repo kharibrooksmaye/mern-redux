@@ -48,4 +48,5 @@ export const headerItems = [
   { label: "About Us", to: "/about" },
   { label: "Pricing", to: "/pricing" },
   { label: "Contact Us", to: "/contact" },
+  { label: "Demo", to: "/demo" },
 ];

@@ -1,5 +1,5 @@
 import express from "express";
-import { google } from "googleapis";
+import { compute_v1, google } from "googleapis";
 import TransloaditClient from "transloadit";
 
 const router = express.Router();
@@ -135,12 +135,12 @@ router.get("/gce", async (req, res) => {
   try {
     const newVMs = await compute.instances.list({
       project: "mern-redux-361607",
-      zone: "us-east1-c",
+      zone: "us-central1-c",
       maxResults: 500,
     });
     const data = newVMs.data.items;
 
-    res.status(200).json(data);
+    res.status(200).json(data as compute_v1.Schema$Instance[]);
   } catch (error) {
     console.log(error);
   }
@@ -158,6 +158,7 @@ router.get("/tasks", async (req, res) => {
   }
 });
 router.get("/transloadit", async (req, res) => {
+  const assemblyList = [];
   const assemblies = await transloadit.listAssemblies(options);
   if (assemblies) {
     const inProcess = assemblies.items.filter(
@@ -170,7 +171,10 @@ router.get("/transloadit", async (req, res) => {
         status: assem.ok,
         name: assem.instance,
       };
+      assemblyList.push(obj);
     });
+
+    res.status(200).json(assemblyList);
   } else {
     console.error({ assemblies });
     res.status(400).json("couldnt get data");

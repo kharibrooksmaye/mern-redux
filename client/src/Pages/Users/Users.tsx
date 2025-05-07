@@ -172,7 +172,7 @@ const Users = () => {
           <Box component="form" sx={{ m: 2 }} onSubmit={handleSubmit}>
             <Grid container spacing={2}>
               {inputs.map(({ name, type, label, size }) => (
-                <Grid item xs={size}>
+                <Grid item xs={size} key={name}>
                   <TextField
                     key={name}
                     sx={{ margin: "5px" }}
