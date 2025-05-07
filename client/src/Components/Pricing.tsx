@@ -10,6 +10,7 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  useTheme,
 } from "@mui/material";
 import axios from "axios";
 import { useNavigate } from "react-router";
@@ -29,6 +30,7 @@ const Pricing = () => {
   const [success, setSuccess] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [customerId, setCustomerId] = useState("");
+  const theme = useTheme(); // Access the theme
 
   const createCheckoutSession = async (
     stripeLookup: string,
@@ -109,69 +111,85 @@ const Pricing = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ color: theme.palette.primary.main }}
+      >
         Pricing
       </Typography>
 
-      {/* Free Tier as a Separate Block */}
-      <Box mb={4}>
-        <Card
-          sx={{
-            ...(user?.subscription === "free" && {
-              border: "5px solid #3f51b5",
-            }),
-            boxShadow: 3,
-            borderRadius: "8px",
-          }}
-        >
-          <CardContent>
-            {user?.subscription === "free" && (
+      <Grid mb={4} container spacing={3} justifyContent="center">
+        <Grid item xs={12} sm={6} md={4}>
+          <Card
+            sx={{
+              ...(user?.subscription === "free" && {
+                border: "5px solid #3f51b5",
+              }),
+              boxShadow: 3,
+              borderRadius: "8px",
+            }}
+          >
+            <CardContent>
+              {user?.subscription === "free" && (
+                <Typography
+                  variant="h5"
+                  color="#3f51b5"
+                  style={{ fontWeight: "bold" }}
+                >
+                  Current Plan
+                </Typography>
+              )}
               <Typography
                 variant="h5"
-                color="#3f51b5"
-                style={{ fontWeight: "bold" }}
+                gutterBottom
+                sx={{ color: theme.palette.secondary.main }}
               >
-                Current Plan
+                {freeTier.title}
               </Typography>
-            )}
-            <Typography variant="h5" gutterBottom>
-              {freeTier.title}
-            </Typography>
-            <Typography variant="body1">{freeTier.perks}</Typography>
-            <Typography variant="body2" style={{ marginTop: "10px" }}>
-              <strong>Number of users:</strong> {freeTier.users}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Unprocessed samples:</strong> {freeTier.samples}
-            </Typography>
-            <Typography
-              variant="h6"
-              color="primary"
-              style={{ marginTop: "10px" }}
-            >
-              {freeTier.price}
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              disabled={user?.subscription === freeTier.stripeLookup}
-              style={{ margin: "15px" }}
-              onClick={() =>
-                createCheckoutSession(
-                  freeTier.stripeLookup ?? "",
-                  "subscription"
-                )
-              }
-            >
-              {user?.subscription === freeTier.stripeLookup
-                ? "Your Current Plan"
-                : "Downgrade to Free"}
-            </Button>
-          </CardContent>
-        </Card>
-      </Box>
-
-      {/* Paid Tiers */}
+              <List>
+                {freeTier.perks.map((perk, perkIndex) => (
+                  <React.Fragment key={perkIndex}>
+                    <ListItem disableGutters sx={{ textAlign: "center" }}>
+                      <ListItemText primary={perk} />
+                    </ListItem>
+                    {perkIndex < freeTier.perks.length - 1 && <Divider />}{" "}
+                    {/* Add Divider */}
+                  </React.Fragment>
+                ))}
+              </List>
+              <Typography variant="body2" style={{ marginTop: "10px" }}>
+                <strong>Number of users:</strong> {freeTier.users}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Unprocessed samples:</strong> {freeTier.samples}
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ color: theme.palette.primary.dark, marginTop: "10px" }}
+              >
+                {freeTier.price}
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                disabled={user?.subscription === freeTier.stripeLookup}
+                style={{ margin: "15px" }}
+                onClick={() =>
+                  createCheckoutSession(
+                    freeTier.stripeLookup ?? "",
+                    "subscription"
+                  )
+                }
+              >
+                {user?.subscription === freeTier.stripeLookup
+                  ? "Your Current Plan"
+                  : "Downgrade to Free"}
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
       <Grid container spacing={3}>
         {paidTiers.map((tier, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
@@ -190,7 +208,11 @@ const Pricing = () => {
               }}
             >
               <CardContent style={{ flexGrow: 1 }}>
-                <Typography variant="h5" gutterBottom>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{ color: theme.palette.secondary.main }}
+                >
                   {tier.title}
                 </Typography>
                 {tier.bestValue && (
@@ -215,8 +237,7 @@ const Pricing = () => {
                 </List>
                 <Typography
                   variant="h6"
-                  color="primary"
-                  style={{ marginTop: "10px" }}
+                  sx={{ color: theme.palette.primary.dark, marginTop: "10px" }}
                 >
                   {tier.price}
                 </Typography>

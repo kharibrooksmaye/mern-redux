@@ -1,9 +1,10 @@
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 
 const About = () => {
+  const theme = useTheme();
   return (
-    <Box sx={{ padding: "20px" }}>
+    <Box sx={{ padding: "20px", color: theme.palette.text.primary }}>
       <Typography variant="h4" gutterBottom>
         About Us
       </Typography>

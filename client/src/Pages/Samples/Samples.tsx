@@ -13,6 +13,7 @@ import {
   Grid,
   IconButton,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { Check, Info, Inventory, Pending, Upload } from "@mui/icons-material";
 import DocUpload from "../../Components/Upload";
@@ -29,6 +30,8 @@ const Samples = () => {
   const [toggleView, setToggleView] = useState(false);
 
   const { user } = useContext(AuthContext) as Auth;
+
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -96,7 +99,7 @@ const Samples = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom color={theme.palette.text.primary}>
         Samples
       </Typography>
       {!toggleView && !toggleUpload && (

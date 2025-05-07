@@ -3,22 +3,32 @@ import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import { navbarItems } from "./Constants/navbarItems";
 import { useNavigate } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import ResponsiveAppBar from "./ResponsiveAppbar";
 import RouterLink from "./RouterLink";
 import { useAuth } from "../hooks/useAuth";
 
-const Navbar = () => {
+type NavBarProps = {
+  darkMode: boolean;
+  setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
+};
+const Navbar = ({ darkMode, setDarkMode }: NavBarProps) => {
+  console.log(navbarItems);
   const isAuthenticated = useAuth("Navbar"); // Get authentication status from context
   const drawerWidth = 250;
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
+  const theme = useTheme();
+
+  console.log(darkMode);
   return (
     <Box>
       <ResponsiveAppBar
         drawerWidth={drawerWidth}
         open={open}
         setOpen={setOpen}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
       />
       <Drawer
         sx={{
@@ -27,7 +37,8 @@ const Navbar = () => {
           "& .MuiDrawer-paper": {
             width: drawerWidth,
             boxSizing: "border-box",
-            color: "primary.dark",
+            color: theme.palette.text.primary,
+            backgroundColor: theme.palette.background.default,
             border: "none",
           },
         }}

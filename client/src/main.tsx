@@ -29,6 +29,7 @@ import { Auth } from "./@types/auth";
 import { useAuth } from "./hooks/useAuth";
 import About from "./Pages/About";
 import Contact from "./Pages/Contact";
+import DemoStatus from "./Pages/Demo";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
   const auth = useContext(AuthContext) as Auth;
@@ -57,29 +58,28 @@ const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
-  <ThemeProvider theme={dashboardTheme}>
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<App />}>
-            <Route path="/" element={<Home />} />
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
-            <Route path="blog" element={<Blog />} />
-            <Route path="products" element={<Products />} />
-            <Route path="about" element={<About />} />
-            <Route path="contact" element={<Contact />} />
-            <Route path="pricing" element={<Pricing />} />
-            <Route element={<PrivateRoute />}>
-              <Route path="users" element={<Users />} />
-              <Route path="samples" element={<Samples />} />
-              <Route path="organizations" element={<Organizations />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="profile" element={<Profile />} />
-            </Route>
+  <BrowserRouter>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<App />}>
+          <Route path="/" element={<Home />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+          <Route path="blog" element={<Blog />} />
+          <Route path="products" element={<Products />} />
+          <Route path="about" element={<About />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="pricing" element={<Pricing />} />
+          <Route path="demo" element={<DemoStatus />} />
+          <Route element={<PrivateRoute />}>
+            <Route path="users" element={<Users />} />
+            <Route path="samples" element={<Samples />} />
+            <Route path="organizations" element={<Organizations />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
-  </ThemeProvider>
+        </Route>
+      </Routes>
+    </AuthProvider>
+  </BrowserRouter>
 );

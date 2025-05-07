@@ -7,6 +7,7 @@ const CommonButton = ({
   size,
   sx,
   variant,
+  href,
 }: {
   children: React.ReactNode;
   color?:
@@ -22,6 +23,7 @@ const CommonButton = ({
   size?: "small" | "medium" | "large" | undefined;
   sx?: object;
   variant?: "text" | "outlined" | "contained" | undefined;
+  href?: string | undefined;
 }) => {
   return (
     <Button
@@ -30,6 +32,7 @@ const CommonButton = ({
       size={size}
       sx={sx}
       variant={variant}
+      href={href}
     >
       {children}
     </Button>

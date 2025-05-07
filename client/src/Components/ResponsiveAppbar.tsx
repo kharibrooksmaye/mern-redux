@@ -17,30 +17,39 @@ import { AuthContext } from "../context/AuthContext";
 import { Auth } from "../@types/auth";
 import {
   Breadcrumbs,
+  Card,
   InputAdornment,
-  Link,
+  Link as MuiLink,
   Paper,
   styled,
   TextField,
+  useTheme,
 } from "@mui/material";
 import {
   BedtimeOutlined,
   InfoOutlined,
+  LightMode,
+  LightModeOutlined,
   Notifications,
   NotificationsOutlined,
   Search,
 } from "@mui/icons-material";
 import { InputUnstyled, InputUnstyledProps } from "@mui/base";
 import { headerItems } from "./Constants/navbarItems";
+import { Link } from "react-router-dom";
 
 const ResponsiveAppBar = ({
   setOpen,
   open,
   drawerWidth,
+  darkMode,
+  setDarkMode,
 }: {
   open: boolean;
   setOpen: Function;
   drawerWidth: number;
+  darkMode: boolean;
+  setDarkMode: Function;
 }) => {
   const { loggedIn, logout } = React.useContext(AuthContext) as Auth;
   const navigate = useNavigate();
@@ -97,8 +106,7 @@ const ResponsiveAppBar = ({
 
   const StyledInput = styled("input")(
     ({ theme }) => `
-    background-color: #F4F7FE;
-    background: #F4F7FE;
+    background-color: ${theme.palette.background.paper};
     border: none;
     border-radius: 30px;
     height: 41px;
@@ -138,21 +146,19 @@ const ResponsiveAppBar = ({
   const pathname = location.pathname.replace("/", "");
   const currentPage = `${pathname.charAt(0).toUpperCase()}${pathname.slice(1)}`;
 
-  const [darkMode, setDarkMode] = useState(false);
-
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
-    document.body.style.backgroundColor = darkMode ? "#ffffff" : "#121212";
-    document.body.style.color = darkMode ? "#000000" : "#ffffff";
   };
+
+  const theme = useTheme();
 
   return (
     <AppBar
       position="static"
       sx={{
-        backgroundColor: darkMode ? "#121212" : "transparent",
+        backgroundColor: theme.palette.background.default,
+        backgroundImage: "none",
         boxShadow: "none",
-        marginBottom: "100px",
       }}
     >
       <Toolbar sx={{ marginTop: "16px" }}>
@@ -182,17 +188,23 @@ const ResponsiveAppBar = ({
         >
           <Box sx={{ flexDirection: "column", display: "flex" }}>
             <Breadcrumbs>
-              <Link underline="hover" color="GrayText" href="/">
+              <MuiLink
+                underline="hover"
+                color="primary.dark"
+                component={Link}
+                to="/"
+              >
                 Home
-              </Link>
+              </MuiLink>
               {location.pathname !== "/" && (
-                <Link
+                <MuiLink
                   underline="none"
                   color="primary.dark"
-                  href={location.pathname}
+                  component={Link}
+                  to={location.pathname}
                 >
                   {currentPage}
-                </Link>
+                </MuiLink>
               )}
             </Breadcrumbs>
             <Typography variant="h4" fontWeight={700}>
@@ -234,11 +246,11 @@ const ResponsiveAppBar = ({
             flexGrow: 1,
             justifyContent: "flex-end",
             display: "flex",
+            backgroundColor: "transparent",
             "& > * + *": { ml: 1 },
           }}
         >
-          <Paper
-            elevation={3}
+          <Card
             sx={{
               borderRadius: "30px",
               border: "0px solid black",
@@ -248,13 +260,14 @@ const ResponsiveAppBar = ({
               flexDirection: "row",
               alignItems: "center",
               padding: "10px",
-              backgroundColor: darkMode ? "#333333" : "#F4F7FE",
-              "& > * + *": { ml: 1 },
             }}
           >
             <CustomInput
               type="text"
               placeholder="Search"
+              style={{
+                backgroundColor: theme.palette.background.paper,
+              }}
               startAdornment={
                 <InputAdornment>
                   <Search />
@@ -266,7 +279,7 @@ const ResponsiveAppBar = ({
             </IconButton>
             <IconButton onClick={toggleDarkMode}>
               {darkMode ? (
-                <BedtimeOutlined fontSize="small" />
+                <LightModeOutlined fontSize="small" />
               ) : (
                 <BedtimeOutlined fontSize="small" />
               )}
@@ -306,7 +319,7 @@ const ResponsiveAppBar = ({
                 ))}
               </Menu>
             </Box>
-          </Paper>
+          </Card>
         </Box>
       </Toolbar>
     </AppBar>

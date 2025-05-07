@@ -12,40 +12,85 @@ const font = "'DM Sans', sans-serif";
 const logoFont = "'Poppins', sans-serif";
 export const dashboardTheme = createTheme({
   palette: {
+    mode: "light",
+    background: {
+      default: "#F5F5F5",
+      paper: "#FFFFFF",
+    },
     primary: {
-      // lighter: "#F0FEFB",
       light: "#D3FBF9",
       main: "#b2ebf2",
       dark: "#5997AE",
-      // darker: "#225074",
     },
     secondary: {
-      // lighter: "#FFFAE0",
       light: "#FFEDA3",
       main: "#FFDA66",
       dark: "#B79133",
-      // darker: "#7A5713",
     },
     warning: {
-      // lighter: "#FEF8E2",
       light: "#F9E2A9",
       main: "#ECBE6E",
       dark: "#A97737",
-      // darker: "#714115",
     },
     error: {
-      // lighter: "#FFF0E1",
       light: "#FFC4A7",
       main: "#FF886D",
       dark: "#B73B36",
-      // darker: "#7A1420",
     },
     success: {
-      // lighter: "#E6FADD",
       light: "#9EE293",
       main: "#43a047",
       dark: "#217333",
-      // darker: "#0C4C26",
+    },
+    text: {
+      primary: "#000000",
+      secondary: "#FFFFFF",
+    },
+  },
+  typography: {
+    fontSize: 14,
+    body1: {
+      fontSize: "1rem",
+    },
+    fontFamily: font,
+    fontWeightRegular: 400,
+    fontWeightBold: 700,
+    fontWeightLight: 100,
+    fontWeightMedium: 500,
+  },
+});
+
+export const darkDashboardTheme = createTheme({
+  palette: {
+    mode: "dark",
+    background: {
+      default: "#121212",
+      paper: "#1E1E1E",
+    },
+    primary: {
+      light: "#4A8A9E",
+      main: "#357A8A",
+      dark: "#1F4F5E",
+    },
+    secondary: {
+      light: "#BFA14D",
+      main: "#A37F3A",
+      dark: "#6E5826",
+    },
+    warning: {
+      light: "#D1B06E",
+      main: "#B38E4E",
+      dark: "#7A6235",
+    },
+    error: {
+      light: "#D97A6A",
+      main: "#B55A4D",
+      dark: "#7A3A31",
+    },
+    success: {
+      light: "#7FBF7A",
+      main: "#5A9F55",
+      dark: "#3A6F37",
     },
   },
   typography: {

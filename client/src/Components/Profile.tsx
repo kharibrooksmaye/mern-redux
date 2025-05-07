@@ -43,26 +43,9 @@ const Profile = () => {
   const [hover, setHover] = useState(false);
   const [edit, setEdit] = useState(false);
   const [updatedProperties, setUpdatedProperties] = useState<{}>({});
-  const [success, setSuccess] = useState(false);
-  const [sessionId, setSessionId] = useState("");
 
   const disabled = JSON.stringify(user) === JSON.stringify(localUser);
 
-  const saveSessionId = async (sessionId: string) => {
-    try {
-      const { data } = await axios.put(
-        `http://localhost:5000/api/users/${user?._id}/session`,
-        { sessionId }
-      );
-      if (data.success) {
-        setUser(data.user);
-        setLocalUser(data.user);
-        console.log("Session ID saved successfully");
-      }
-    } catch (error) {
-      console.error("Error saving session ID:", error);
-    }
-  };
   const handleSubmit = async (e: React.FormEvent<FormElement>) => {
     e.preventDefault();
     const newUser = { ...localUser };
@@ -100,22 +83,6 @@ const Profile = () => {
       setUpdatedProperties(updatedObj);
     }
   };
-
-  useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    if (query.get("success")) {
-      setSuccess(true);
-      setSessionId(query.get("session_id") || "");
-      saveSessionId(query.get("session_id") || "");
-    }
-    if (query.get("canceled")) {
-      setSuccess(false);
-    }
-
-    if (localUser?.session) {
-      setSessionId(localUser?.session);
-    }
-  }, [sessionId]);
 
   const fullName =
     localUser?.firstName || localUser?.lastName
