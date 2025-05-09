@@ -41,6 +41,16 @@ import User from "../models/user.model";
 import Doc from "../models/documents.model";
 import Record from "../models/records.model";
 import * as cloudTasks from "@google-cloud/tasks";
+
+const tasks = async () => {
+  const project = await auth.getProjectId();
+  const authClient = await auth.getClient();
+  const tasks = await taskqueue.projects.locations.queues.tasks.list({
+    parent: `projects/${project}/locations/us-central1/queues/mern-redux-queue-new`,
+    auth: authClient,
+  });
+  return tasks.data;
+};
 const taskClient = new cloudTasks.v2beta3.CloudTasksClient();
 
 const parent = taskClient.queuePath(
@@ -58,6 +68,7 @@ const options = {
   params: {
     template_id: process.env.TRANSLOADIT_TEMPLATE_ID,
     type: ["executing", "completed"],
+    keywords: ["fields"],
   },
 };
 
@@ -65,60 +76,20 @@ router.get("/event", async (req, res) => {
   try {
     let vmData = [];
     let assemData = [];
-    const tasks = await taskqueue.projects.locations.queues.tasks.list({
-      parent,
-    });
-    let tasksData = tasks.data;
-    const newVMs = await vms();
-    const runningVMs = newVMs.filter((vm) => vm.status != "TERMINATED");
-    runningVMs.forEach(({ id, name, status }) => {
-      let obj: NetworkResourceObject = {
-        type: "vm",
-        id,
-        name,
-        status,
-      };
-      vmData.push(obj);
-    });
-
-    const assemblies = await transloadit.listAssemblies(options);
-    if (assemblies) {
-      const inProcess = assemblies.items.filter(
-        (assem) => assem.ok === "ASSEMBLY_EXECUTING"
-      );
-      inProcess.forEach((assem) => {
-        const obj: NetworkResourceObject = {
-          type: "assembly",
-          id: assem.id,
-          status: assem.ok,
-          name: assem.instance,
-        };
-        assemData.push(obj);
-      });
-    } else {
-      console.error({ assemblies });
-      res.status(400).json("couldnt get data");
-      throw new Error(`❌ Unable to process Assemblies`);
-    }
+    const tasksData = await tasks();
     res.writeHead(200, {
       Connection: "keep-alive",
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       "Access-Control-Allow-Origin": "*",
     });
-    const data: AdminData = {
-      vms: vmData,
-      assem: assemData,
+    const data = {
       tasks: tasksData,
     };
     console.log(data);
     res.flushHeaders();
     let eventInterval = setInterval(async () => {
-      if (
-        data.vms.length > 0 ||
-        data.assem.length > 0 ||
-        Object.keys(data.tasks).length > 0
-      ) {
+      if (Object.keys(data.tasks).length > 0) {
         const output = `data: ${JSON.stringify(data)} \n\n`;
         res.write("event: message\n");
         res.write(output);

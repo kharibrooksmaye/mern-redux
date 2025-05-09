@@ -240,6 +240,7 @@ router.post("/tasktest", async (req, res) => {
 // finish upload process and pass to VM
 router.put("/:id/upload/finish", async (req, res) => {
   try {
+    const { demo } = req.body;
     let record = await Record.findOne({ id: req.params.id });
     if (!record) {
       res.status(404).send("Record not found");
@@ -262,13 +263,30 @@ router.put("/:id/upload/finish", async (req, res) => {
     const data = await vms();
     const running = data.filter((vm) => vm.status === "RUNNING");
     console.log(running.length);
-    if (running && running.length < 5) {
+    if (!demo && running && running.length < 5) {
       await publishMessage(task);
     }
     res.status(200).send("Uploaded Specimens");
   } catch (error) {
     console.log(error);
     res.status(401).send(error);
+  }
+});
+
+router.post("/task", async (req, res) => {
+  try {
+    const task = req.body;
+    const data = await vms();
+    const running = data.filter((vm) => vm.status === "RUNNING");
+    console.log(running.length);
+    if (running && running.length < 5) {
+      await publishMessage(task);
+    }
+    res.status(200).send("Uploaded Specimens");
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send(error);
   }
 });
 

@@ -27,6 +27,7 @@ interface DocUploadProps {
   setToggleUpload: Function;
   demo: boolean;
   handleNext?: Function;
+  setAssemblyUrl?: Function;
 }
 const DocUpload = ({
   record,
@@ -35,6 +36,7 @@ const DocUpload = ({
   setToggleUpload,
   demo,
   handleNext,
+  setAssemblyUrl,
 }: DocUploadProps) => {
   const [uppy] = useState(() =>
     new Uppy({
@@ -50,6 +52,10 @@ const DocUpload = ({
         params: {
           auth: { key: import.meta.env.VITE_TRANSLOADIT_AUTH_KEY },
           template_id: import.meta.env.VITE_TRANSLOADIT_TEMPLATE_ID,
+          fields: {
+            user_id: demo ? import.meta.env.VITE_DEMO_USER_ID : user?.id,
+            record_id: record?.id || "",
+          },
         },
       },
       waitForEncoding: true,
@@ -94,6 +100,7 @@ const DocUpload = ({
             recordId: record.id,
             userId: demo ? import.meta.env.VITE_DEMO_USER_ID : user?._id,
             uploaded: true,
+            demo,
           }
         );
         setUploaded(true);
@@ -123,6 +130,11 @@ const DocUpload = ({
     uppy.on("complete", (result) => {
       let array: Specimen[] = [];
       const transloaditResult = result.transloadit as { [key: string]: any }[];
+      console.log(transloaditResult);
+      const { assembly_ssl_url } = transloaditResult[0];
+      if (setAssemblyUrl) {
+        setAssemblyUrl(assembly_ssl_url);
+      }
       const results = transloaditResult[0].results;
       const encoded = results[":original"];
       const thumbs = results.thumbs;

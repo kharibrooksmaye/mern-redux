@@ -41,6 +41,10 @@ const Demo = () => {
     compute_v1.Schema$Instance[] | null
   >(null);
   const [assemblies, setAssemblies] = useState<AssemblyResponse[] | null>(null);
+  const [assemblyUrl, setAssemblyUrl] = useState<string | null>(null);
+  const [taskData, setTaskData] = useState<any>(null);
+  const [currentAssembly, setCurrentAssembly] =
+    useState<AssemblyResponse | null>(null);
   const [runningAssem, setRunningAssem] = useState<
     NetworkResourceObject[] | null
   >(null);
@@ -62,12 +66,67 @@ const Demo = () => {
       console.error("Error creating record:", error);
     }
   };
+
+  const getAssemblyStatus = async () => {
+    if (!assemblyUrl) return;
+    try {
+      const response = await axios.get(assemblyUrl);
+      const assemblyResult = response.data as AssemblyResponse;
+      setCurrentAssembly(assemblyResult);
+      console.log("Assembly result:", assemblyResult);
+    } catch (error) {
+      console.error("Error getting assembly status:", error);
+    }
+  };
+
+  const createTask = async () => {
+    if (!record) return;
+    const task = {
+      id: record.id,
+      userid: import.meta.env.VITE_DEMO_USER_ID,
+      fields: record.specimens.length,
+    };
+    const data = await axios.post(
+      "http://localhost:5000/api/records/task",
+      task
+    );
+
+    console.log("Task created successfully:", data.data);
+
+    const eventSource = new EventSource(
+      "http://localhost:5000/api/admin/event/"
+    );
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("Event data:", data);
+      if (data.tasks) {
+        const taskData = data.tasks[0];
+        console.log("Task data:", taskData);
+        setTaskData(taskData);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("EventSource failed:", error);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  };
   const getStatus = async () => {
     setLoading(true);
     try {
       const results = await axios.get("http://localhost:5000/api/admin/gce");
       const assemblies = await axios.get(
-        "http://localhost:5000/api/admin/transloadit"
+        "http://localhost:5000/api/admin/transloadit",
+        {
+          params: {
+            recordId: record?.id,
+          },
+        }
       );
       console.log(results, assemblies);
       console.log("VMs", results.data);
@@ -115,6 +174,7 @@ const Demo = () => {
       </Box>
     );
   };
+
   const ViewAssembly = () => {
     return (
       <Box sx={{ padding: 2 }}>
@@ -122,21 +182,31 @@ const Demo = () => {
         <Typography variant="body1">
           This is where you can view the assembly status and details.
         </Typography>
-        {assemblies &&
-          assemblies.map((assem) => (
-            <Card key={assem.id} sx={{ margin: 2 }}>
-              <CardContent>
-                <Typography variant="h6">{assem.name}</Typography>
-                <Typography variant="body1">Status: {assem.status}</Typography>
-                {assem.ok === "ASSEMBLY_COMPLETED" && (
-                  <>
-                    {"Assembly completed successfully!"}
-                    <CheckCircle color="success" />
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+        {currentAssembly && (
+          <Card key={currentAssembly.assembly_id} sx={{ margin: 2 }}>
+            {currentAssembly.ok === "ASSEMBLY_COMPLETED" && (
+              <>
+                {"Assembly completed successfully!"}
+                <CheckCircle color="success" />
+              </>
+            )}
+            <CardContent>
+              <Typography variant="h6">{currentAssembly.instance}</Typography>
+              <Typography variant="body1">
+                Status: {currentAssembly.account_id}
+              </Typography>
+              <Typography variant="body1">
+                Created: {currentAssembly.execution_start}
+              </Typography>
+              <Typography variant="body1">
+                Completed: {currentAssembly.last_job_completed}
+              </Typography>
+              <Typography variant="body1">
+                Duration: {currentAssembly.execution_duration}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
       </Box>
     );
   };
@@ -150,6 +220,7 @@ const Demo = () => {
           setRecord={setRecord}
           setToggleUpload={setGetStarted}
           handleNext={handleNext}
+          setAssemblyUrl={setAssemblyUrl}
         />
       </Box>
     );
@@ -165,7 +236,7 @@ const Demo = () => {
     },
     {
       label: "run cloud function",
-      component: <Box>Run</Box>,
+      component: <Box>{taskData}</Box>,
     },
     {
       label: "trigger pub/sub",
@@ -196,6 +267,14 @@ const Demo = () => {
     getStatus();
   }, []);
 
+  useEffect(() => {
+    if (steps[activeStep].label === "create assembly") {
+      getAssemblyStatus();
+    }
+    if (steps[activeStep].label === "run cloud function") {
+      createTask();
+    }
+  }, [activeStep]);
   useEffect(() => {
     if (VMs) {
       filterStatus();
