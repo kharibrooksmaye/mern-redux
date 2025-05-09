@@ -21,6 +21,21 @@ const transloadit = new TransloaditClient({
   authSecret: process.env.TRANSLOADIT_SECRET,
 });
 const compute = google.compute({ version: "v1" });
+
+const auth = new google.auth.GoogleAuth();
+
+const vms = async () => {
+  const project = await auth.getProjectId();
+  const authClient = await auth.getClient();
+  const newVMs = await compute.instances.list({
+    project,
+    auth: authClient,
+    zone: "us-central1-c",
+    maxResults: 500,
+  });
+
+  return newVMs.data.items;
+};
 const taskqueue = google.cloudtasks({ version: "v2beta3" });
 import User from "../models/user.model";
 import Doc from "../models/documents.model";
@@ -54,14 +69,8 @@ router.get("/event", async (req, res) => {
       parent,
     });
     let tasksData = tasks.data;
-    const newVMs = await compute.instances.list({
-      project: "mern-redux-361607",
-      zone: "us-east1-c",
-      maxResults: 500,
-    });
-    const runningVMs = newVMs.data.items.filter(
-      (vm) => vm.status != "TERMINATED"
-    );
+    const newVMs = await vms();
+    const runningVMs = newVMs.filter((vm) => vm.status != "TERMINATED");
     runningVMs.forEach(({ id, name, status }) => {
       let obj: NetworkResourceObject = {
         type: "vm",
@@ -126,12 +135,7 @@ router.get("/event", async (req, res) => {
 });
 router.get("/gce", async (req, res) => {
   try {
-    const newVMs = await compute.instances.list({
-      project: "mern-redux-361607",
-      zone: "us-central1-c",
-      maxResults: 500,
-    });
-    const data = newVMs.data.items;
+    const data = await vms();
 
     res.status(200).json(data as compute_v1.Schema$Instance[]);
   } catch (error) {
@@ -152,23 +156,9 @@ router.get("/tasks", async (req, res) => {
   }
 });
 router.get("/transloadit", async (req, res) => {
-  const assemblyList: NetworkResourceObject[] = [];
   const assemblies = await transloadit.listAssemblies(options);
   if (assemblies) {
-    const inProcess = assemblies.items.filter(
-      (assem) => assem.ok === "ASSEMBLY_EXECUTING"
-    );
-    inProcess.forEach((assem) => {
-      const obj: NetworkResourceObject = {
-        type: "assembly",
-        id: assem.id,
-        status: assem.ok,
-        name: assem.instance,
-      };
-      assemblyList.push(obj);
-    });
-
-    res.status(200).json(assemblyList);
+    res.status(200).json(assemblies);
   } else {
     console.error({ assemblies });
     res.status(400).json("couldnt get data");

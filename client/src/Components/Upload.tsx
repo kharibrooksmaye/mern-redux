@@ -36,7 +36,6 @@ const DocUpload = ({
   demo,
   handleNext,
 }: DocUploadProps) => {
-  console.log("DocUpload", record);
   const [uppy] = useState(() =>
     new Uppy({
       debug: true,
@@ -97,7 +96,6 @@ const DocUpload = ({
             uploaded: true,
           }
         );
-        console.log("Record updated successfully:", data.data);
         setUploaded(true);
         if (!demo) {
           navigate("/samples");
@@ -105,8 +103,7 @@ const DocUpload = ({
           handleNext && handleNext();
         }
       }
-      console.log("updated record", visible);
-      setToggleUpload(!toggleUpload);
+      !demo && setToggleUpload(!toggleUpload);
     } catch (err) {
       console.log("Error: " + err);
     }
@@ -124,14 +121,12 @@ const DocUpload = ({
   useEffect(() => {
     if (!record || (!demo && !user)) return;
     uppy.on("complete", (result) => {
-      console.log(result);
       let array: Specimen[] = [];
       const transloaditResult = result.transloadit as { [key: string]: any }[];
       const results = transloaditResult[0].results;
       const encoded = results[":original"];
       const thumbs = results.thumbs;
 
-      console.log(result);
       encoded.forEach((vid: { ssl_url: string; original_basename: string }) => {
         let thumbMatch = thumbs.find(
           (thumb: { original_basename: string; ssl_url: string }) =>
@@ -151,7 +146,6 @@ const DocUpload = ({
       if (upload) {
         array.forEach((specimen) => {
           const { user_id, encoded, thumb, info, recordId } = specimen;
-          console.log(user_id);
           axios
             .put(`http://localhost:5000/api/records/${record.id}/upload`, {
               user_id,

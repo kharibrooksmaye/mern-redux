@@ -17,10 +17,16 @@ import {
   StepContent,
 } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
-import { Memory, PlayCircle, StopCircle } from "@mui/icons-material";
+import {
+  CheckCircle,
+  Memory,
+  PlayCircle,
+  StopCircle,
+} from "@mui/icons-material";
 import { compute_v1 } from "googleapis";
 import DocUpload from "../Components/Upload";
 import { Record } from "../@types/record";
+import { AssemblyResponse, AssemblyResult } from "@uppy/transloadit";
 
 interface NetworkResourceObject {
   id: string;
@@ -34,9 +40,7 @@ const Demo = () => {
   const [runningVMs, setRunningVMs] = useState<
     compute_v1.Schema$Instance[] | null
   >(null);
-  const [assemblies, setAssemblies] = useState<NetworkResourceObject[] | null>(
-    null
-  );
+  const [assemblies, setAssemblies] = useState<AssemblyResponse[] | null>(null);
   const [runningAssem, setRunningAssem] = useState<
     NetworkResourceObject[] | null
   >(null);
@@ -65,7 +69,7 @@ const Demo = () => {
       const assemblies = await axios.get(
         "http://localhost:5000/api/admin/transloadit"
       );
-      console.log(results);
+      console.log(results, assemblies);
       console.log("VMs", results.data);
       setVMs(results.data);
       setAssemblies(assemblies.data.items);
@@ -111,6 +115,31 @@ const Demo = () => {
       </Box>
     );
   };
+  const ViewAssembly = () => {
+    return (
+      <Box sx={{ padding: 2 }}>
+        <Typography variant="h6">View Assembly</Typography>
+        <Typography variant="body1">
+          This is where you can view the assembly status and details.
+        </Typography>
+        {assemblies &&
+          assemblies.map((assem) => (
+            <Card key={assem.id} sx={{ margin: 2 }}>
+              <CardContent>
+                <Typography variant="h6">{assem.name}</Typography>
+                <Typography variant="body1">Status: {assem.status}</Typography>
+                {assem.ok === "ASSEMBLY_COMPLETED" && (
+                  <>
+                    {"Assembly completed successfully!"}
+                    <CheckCircle color="success" />
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+      </Box>
+    );
+  };
   const DemoUpload = () => {
     return (
       <Box sx={{ padding: 2 }}>
@@ -132,7 +161,7 @@ const Demo = () => {
     },
     {
       label: "create assembly",
-      component: <Box>Create</Box>,
+      component: <ViewAssembly />,
     },
     {
       label: "run cloud function",
@@ -189,62 +218,55 @@ const Demo = () => {
       <Typography variant="h4" gutterBottom>
         Application Demo
       </Typography>
-      {runningVMs &&
-      runningVMs.length === 0 &&
-      runningAssem &&
-      runningAssem.length === 0 ? (
-        <Grid container justifyContent="center">
-          <Grid item xs={12}>
-            <Typography variant="h6" align="center">
-              No Records Being Currently Processed
-            </Typography>
-          </Grid>
-        </Grid>
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Card sx={{ padding: 2 }}>
-              {!getStarted ? (
-                <GetStarted />
-              ) : (
-                <>
-                  <Stepper activeStep={activeStep}>
-                    {steps.map(({ component, label }, index) => (
-                      <Step key={index}>
-                        <StepLabel color="info">{label}</StepLabel>
-                      </Step>
-                    ))}
-                  </Stepper>
-                  <Box sx={{ display: "flex", flexDirection: "column", pt: 2 }}>
-                    <Box
-                      sx={{ display: "flex", flexDirection: "column", flex: 1 }}
-                    >
-                      {steps[activeStep].component}
-                    </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
-                      <Button
-                        color="inherit"
-                        variant="contained"
-                        disabled={activeStep === 0}
-                        onClick={handleBack}
-                        sx={{ mr: 1 }}
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Card sx={{ padding: 2 }}>
+            {!getStarted ? (
+              <GetStarted />
+            ) : (
+              <>
+                <Stepper activeStep={activeStep}>
+                  {steps.map(({ component, label }, index) => (
+                    <Step key={index}>
+                      <StepLabel
+                        sx={{
+                          ".MuiStepLabel-labelContainer": { color: "#444" },
+                        }}
                       >
-                        Back
-                      </Button>
-                      <Box sx={{ flex: "1 1 auto" }} />
-                      <Button onClick={handleNext} variant="contained">
-                        {activeStep === steps.length - 1 ? "Finish" : "Next"}
-                      </Button>
-                    </Box>
+                        {label}
+                      </StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+                <Box sx={{ display: "flex", flexDirection: "column", pt: 2 }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", flex: 1 }}
+                  >
+                    {steps[activeStep].component}
                   </Box>
-                </>
-              )}
-            </Card>
-          </Grid>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Button
+                      color="inherit"
+                      variant="contained"
+                      disabled={activeStep === 0}
+                      onClick={handleBack}
+                      sx={{ mr: 1 }}
+                    >
+                      Back
+                    </Button>
+                    <Box sx={{ flex: "1 1 auto" }} />
+                    <Button onClick={handleNext} variant="contained">
+                      {activeStep === steps.length - 1 ? "Finish" : "Next"}
+                    </Button>
+                  </Box>
+                </Box>
+              </>
+            )}
+          </Card>
         </Grid>
-      )}
+      </Grid>
     </Box>
   );
 };
