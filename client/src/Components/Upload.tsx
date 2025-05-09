@@ -25,13 +25,18 @@ interface DocUploadProps {
   setRecord: Function;
   toggleUpload: boolean;
   setToggleUpload: Function;
+  demo: boolean;
+  handleNext?: Function;
 }
 const DocUpload = ({
   record,
   setRecord,
   toggleUpload,
   setToggleUpload,
+  demo,
+  handleNext,
 }: DocUploadProps) => {
+  console.log("DocUpload", record);
   const [uppy] = useState(() =>
     new Uppy({
       debug: true,
@@ -81,19 +86,24 @@ const DocUpload = ({
   };
 
   const finish = async () => {
-    if (!record || !user) return;
+    if (!record || (!demo && !user)) return;
     try {
       if (!uploaded) {
         const data = await axios.put(
           `http://localhost:5000/api/records/${record.id}/upload/finish`,
           {
             recordId: record.id,
-            userId: user._id,
+            userId: demo ? import.meta.env.VITE_DEMO_USER_ID : user?._id,
             uploaded: true,
           }
         );
         console.log("Record updated successfully:", data.data);
         setUploaded(true);
+        if (!demo) {
+          navigate("/samples");
+        } else {
+          handleNext && handleNext();
+        }
       }
       console.log("updated record", visible);
       setToggleUpload(!toggleUpload);
@@ -106,13 +116,13 @@ const DocUpload = ({
     console.log(error);
   });
   useEffect(() => {
-    if (record && user) {
+    if ((record && user) || (record && demo)) {
       setUpload(true);
     }
   }, [record, user]);
 
   useEffect(() => {
-    if (!record || !user) return;
+    if (!record || (!demo && !user)) return;
     uppy.on("complete", (result) => {
       console.log(result);
       let array: Specimen[] = [];
@@ -128,7 +138,7 @@ const DocUpload = ({
             thumb.original_basename === vid.original_basename
         );
         let obj: Specimen = {
-          user_id: user._id,
+          user_id: demo ? import.meta.env.VITE_DEMO_USER_ID : user?._id,
           encoded: vid.ssl_url,
           info: vid,
           thumb: thumbMatch?.ssl_url || "",
@@ -141,6 +151,7 @@ const DocUpload = ({
       if (upload) {
         array.forEach((specimen) => {
           const { user_id, encoded, thumb, info, recordId } = specimen;
+          console.log(user_id);
           axios
             .put(`http://localhost:5000/api/records/${record.id}/upload`, {
               user_id,
@@ -159,7 +170,7 @@ const DocUpload = ({
     });
   }, [upload, record, user?.id]);
 
-  if (!isAuthenticated && !isLoading && !user) {
+  if (!isAuthenticated && !isLoading && !user && !demo) {
     return <Navigate to="/login" />;
   }
 
@@ -215,8 +226,6 @@ const DocUpload = ({
                   Upload More
                 </Button>
                 <Button
-                  component={Link}
-                  to={`/samples`}
                   onClick={() => finish()}
                   variant="contained"
                   color="warning"

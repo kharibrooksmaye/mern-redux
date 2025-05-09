@@ -28,7 +28,7 @@ interface NetworkResourceObject {
   status: string;
   type: string;
 }
-const Demo = () => {
+const AdminStatus = () => {
   const [loading, setLoading] = useState(false);
   const [VMs, setVMs] = useState<compute_v1.Schema$Instance[] | null>(null);
   const [runningVMs, setRunningVMs] = useState<
@@ -60,20 +60,13 @@ const Demo = () => {
   };
   const getStatus = async () => {
     setLoading(true);
-    try {
-      const results = await axios.get("http://localhost:5000/api/admin/gce");
-      const assemblies = await axios.get(
-        "http://localhost:5000/api/admin/transloadit"
-      );
-      console.log(results);
-      console.log("VMs", results.data);
-      setVMs(results.data);
-      setAssemblies(assemblies.data.items);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error getting status:", error);
-      setLoading(false);
-    }
+    let results = await axios.get("http://localhost:5000/api/admin/gce");
+    let assemblies = await axios.get(
+      "http://localhost:5000/api/admin/transloadit"
+    );
+    setVMs(results.data);
+    setAssemblies(assemblies.data.items);
+    setLoading(false);
   };
 
   const GetStarted = () => {
@@ -120,7 +113,6 @@ const Demo = () => {
           toggleUpload={getStarted}
           setRecord={setRecord}
           setToggleUpload={setGetStarted}
-          handleNext={handleNext}
         />
       </Box>
     );
@@ -187,7 +179,7 @@ const Demo = () => {
   ) : (
     <Box sx={{ width: "100%", mt: 5 }}>
       <Typography variant="h4" gutterBottom>
-        Application Demo
+        Status
       </Typography>
       {runningVMs &&
       runningVMs.length === 0 &&
@@ -202,6 +194,71 @@ const Demo = () => {
         </Grid>
       ) : (
         <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h5" gutterBottom>
+                  Compute Instances {runningVMs && `(${runningVMs.length})`}
+                </Typography>
+                {runningVMs &&
+                  runningVMs.length > 0 &&
+                  runningVMs.map((vm, index) => (
+                    <Box
+                      key={vm.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        mb: 1,
+                      }}
+                    >
+                      <Memory
+                        color={vm.status === "RUNNING" ? "success" : "info"}
+                      />
+                      <Typography sx={{ ml: 1 }}>{vm.name}</Typography>
+                      {vm.status === "RUNNING" ? (
+                        <PlayCircle sx={{ ml: 1 }} color="success" />
+                      ) : (
+                        <StopCircle sx={{ ml: 1 }} color="disabled" />
+                      )}
+                    </Box>
+                  ))}
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h5" gutterBottom>
+                  Assemblies {runningAssem && `(${runningAssem.length})`}
+                </Typography>
+                {runningAssem &&
+                  runningAssem.length > 0 &&
+                  runningAssem.map((assem, index) => (
+                    <Box
+                      key={assem.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        mb: 1,
+                      }}
+                    >
+                      <IconButton
+                        sx={{ mr: 1 }}
+                        color={
+                          assem.status === "ASSEMBLY_COMPLETED"
+                            ? "success"
+                            : "info"
+                        }
+                      >
+                        <Memory />
+                      </IconButton>
+                      <Typography>{assem.id}</Typography>
+                    </Box>
+                  ))}
+              </CardContent>
+            </Card>
+          </Grid>
+
           <Grid item xs={12}>
             <Card sx={{ padding: 2 }}>
               {!getStarted ? (
@@ -249,4 +306,4 @@ const Demo = () => {
   );
 };
 
-export default Demo;
+export default AdminStatus;

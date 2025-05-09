@@ -29,7 +29,7 @@ import { Auth } from "./@types/auth";
 import { useAuth } from "./hooks/useAuth";
 import About from "./Pages/About";
 import Contact from "./Pages/Contact";
-import DemoStatus from "./Pages/Demo";
+import Demo from "./Pages/Demo";
 
 const PrivateRoute = ({ children }: { children?: JSX.Element | undefined }) => {
   const auth = useContext(AuthContext) as Auth;
@@ -70,7 +70,7 @@ root.render(
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
           <Route path="pricing" element={<Pricing />} />
-          <Route path="demo" element={<DemoStatus />} />
+          <Route path="demo" element={<Demo />} />
           <Route element={<PrivateRoute />}>
             <Route path="users" element={<Users />} />
             <Route path="samples" element={<Samples />} />

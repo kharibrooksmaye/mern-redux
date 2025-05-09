@@ -4,10 +4,7 @@ import Doc from "../models/documents.model";
 
 const router = express.Router();
 
-const mernReduxStorage = new Storage({
-  keyFilename: "./modules/mernRedux.json",
-  projectId: "mern-redux-361607",
-});
+const mernReduxStorage = new Storage();
 const bucket = mernReduxStorage.bucket("mern_redux_output");
 
 // router.route('/').get((req, res) => {

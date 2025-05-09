@@ -16,24 +16,17 @@ interface AdminData {
   assem: NetworkResourceObject[];
   tasks: any;
 }
-const auth = new google.auth.GoogleAuth({
-  projectId: "mern-redux-361607",
-  keyFilename: "./modules/mernRedux.json",
-  scopes: ["https://www.googleapis.com/auth/compute"],
-});
 const transloadit = new TransloaditClient({
   authKey: process.env.TRANSLOADIT_KEY,
   authSecret: process.env.TRANSLOADIT_SECRET,
 });
-const compute = google.compute({ version: "v1", auth });
-const taskqueue = google.cloudtasks({ version: "v2beta3", auth });
+const compute = google.compute({ version: "v1" });
+const taskqueue = google.cloudtasks({ version: "v2beta3" });
 import User from "../models/user.model";
 import Doc from "../models/documents.model";
 import Record from "../models/records.model";
 import * as cloudTasks from "@google-cloud/tasks";
-const taskClient = new cloudTasks.v2beta3.CloudTasksClient({
-  keyFileName: "./modules/mernRedux.json",
-});
+const taskClient = new cloudTasks.v2beta3.CloudTasksClient();
 
 const parent = taskClient.queuePath(
   "mern-redux-361607",
@@ -48,7 +41,7 @@ const taskrequest = {
 const options = {
   waitForCompletion: true,
   params: {
-    template_id: "4c17d4ac32bb4482b8e0352511b00df6",
+    template_id: process.env.TRANSLOADIT_TEMPLATE_ID,
     type: ["executing", "completed"],
   },
 };
@@ -143,6 +136,7 @@ router.get("/gce", async (req, res) => {
     res.status(200).json(data as compute_v1.Schema$Instance[]);
   } catch (error) {
     console.log(error);
+    res.status(401).json({ error: error.message });
   }
 });
 
@@ -158,7 +152,7 @@ router.get("/tasks", async (req, res) => {
   }
 });
 router.get("/transloadit", async (req, res) => {
-  const assemblyList = [];
+  const assemblyList: NetworkResourceObject[] = [];
   const assemblies = await transloadit.listAssemblies(options);
   if (assemblies) {
     const inProcess = assemblies.items.filter(

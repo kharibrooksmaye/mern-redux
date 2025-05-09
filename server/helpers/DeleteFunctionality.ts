@@ -1,8 +1,5 @@
 const { Storage } = require("@google-cloud/storage");
-const mernReduxStorage = new Storage({
-  keyFilename: "./mernRedux.json",
-  projectId: "mern-redux-361607",
-});
+const mernReduxStorage = new Storage();
 const Doc = require("../models/documents.model");
 const Record = require("../models/records.model");
 const mernReduxInput = mernReduxStorage.bucket("mern_redux_input");

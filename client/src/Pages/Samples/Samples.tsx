@@ -279,6 +279,7 @@ const Samples = () => {
       )}
       {toggleUpload && (
         <DocUpload
+          demo={false}
           record={record}
           setRecord={setRecord}
           toggleUpload={toggleUpload}

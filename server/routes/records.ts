@@ -7,19 +7,26 @@ import Doc from "../models/documents.model";
 import Record from "../models/records.model";
 
 const router = express.Router();
-const mernReduxStorage = new Storage({
-  keyFilename: "./modules/mernRedux.json",
-  projectId: "mern-redux-361607",
-});
 const auth = new google.auth.GoogleAuth({
-  keyFilename: "./modules/mernRedux.json",
-  projectId: "mern-redux-361607",
+  scopes: ["https://www.googleapis.com/auth/compute"],
 });
-const compute = google.compute({ version: "v1", auth });
-const pubSubClient = new PubSub({
-  keyFilename: "./modules/mernRedux.json",
-  projectId: "mern-redux-361607",
-});
+
+const vms = async () => {
+  const project = await auth.getProjectId();
+  const authClient = await auth.getClient();
+  const newVMs = await compute.instances.list({
+    project,
+    auth: authClient,
+    zone: "us-central1-c",
+    maxResults: 500,
+  });
+
+  return newVMs.data.items;
+};
+const projectId = auth.getProjectId();
+const mernReduxStorage = new Storage();
+const compute = google.compute({ version: "v1" });
+const pubSubClient = new PubSub();
 const copyFile = async (userid: string, recordid: string) => {
   try {
     const data = await mernReduxStorage
@@ -59,7 +66,7 @@ const publishMessage = async (data) => {
   const dataBuffer = Buffer.from(jsonString);
   try {
     const messageId = await pubSubClient
-      .topic("zephyr-topic")
+      .topic("mern-redux-topic")
       .publishMessage({ data: dataBuffer });
     console.log(`Message ${messageId} published`);
   } catch (error) {
@@ -200,12 +207,7 @@ router.post("/:id/republish", async (req, res) => {
       id: req.body.record_id,
       userid: req.body.user_id,
     };
-    const newVMs = await compute.instances.list({
-      project: "mern-redux-361607",
-      zone: "us-east4-c",
-      maxResults: 500,
-    });
-    const data = newVMs.data.items;
+    const data = await vms();
     const running = data.filter((vm) => vm.status === "RUNNING");
     if (running && running.length < 5) {
       await publishMessage(task);
@@ -222,12 +224,7 @@ router.post("/tasktest", async (req, res) => {
       id: req.body.record_id,
       userid: req.body.user_id,
     };
-    const newVMs = await compute.instances.list({
-      project: "mern-redux-361607",
-      zone: "us-east4-c",
-      maxResults: 500,
-    });
-    const data = newVMs.data.items;
+    const data = await vms();
     const running = data.filter((vm) => vm.status === "RUNNING");
     console.log(running.length);
     if (running && running.length < 5) {
@@ -253,25 +250,21 @@ router.put("/:id/upload/finish", async (req, res) => {
       { $set: { specimensLength: length, uploaded: true } },
       { new: true }
     );
-    const data = await copyFile(newRecord.userid, newRecord.id);
+    const copiedFile = await copyFile(newRecord.userid, newRecord.id);
 
-    // const task = {
-    //   id: req.body.recordId,
-    //   userid: req.body.userId,
-    //   volume: record.volume,
-    //   fields: length,
-    // };
-    // const newVMs = await compute.instances.list({
-    //   project: "mern-redux-361607",
-    //   zone: "us-east4-c",
-    //   maxResults: 500,
-    // });
-    // const data = newVMs.data.items;
-    // const running = data.filter((vm) => vm.status === "RUNNING");
-    // console.log(running.length);
-    // if (running && running.length < 5) {
-    //   await publishMessage(task);
-    // }
+    console.log(copiedFile);
+    const task = {
+      id: req.body.recordId,
+      userid: req.body.userId,
+      volume: record.volume,
+      fields: length,
+    };
+    const data = await vms();
+    const running = data.filter((vm) => vm.status === "RUNNING");
+    console.log(running.length);
+    if (running && running.length < 5) {
+      await publishMessage(task);
+    }
     res.status(200).send("Uploaded Specimens");
   } catch (error) {
     console.log(error);

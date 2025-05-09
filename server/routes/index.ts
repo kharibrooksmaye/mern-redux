@@ -32,9 +32,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const handleSecret = async () => {
-  const secretManager = new SecretManagerServiceClient({
-    keyFilename: "./modules/mernRedux.json",
-  });
+  const secretManager = new SecretManagerServiceClient();
 
   try {
     const [secret] = await secretManager.accessSecretVersion({
