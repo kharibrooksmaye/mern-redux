@@ -13,14 +13,10 @@ type NavBarProps = {
   setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
 };
 const Navbar = ({ darkMode, setDarkMode }: NavBarProps) => {
-  console.log(navbarItems);
   const isAuthenticated = useAuth("Navbar"); // Get authentication status from context
   const drawerWidth = 250;
-  const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
   const theme = useTheme();
-
-  console.log(darkMode);
   return (
     <Box>
       <ResponsiveAppBar
@@ -49,27 +45,16 @@ const Navbar = ({ darkMode, setDarkMode }: NavBarProps) => {
       >
         <List sx={{ marginTop: "130px" }}>
           {navbarItems.map((item) => {
-            if (item.protected) {
-              return (
-                isAuthenticated && (
-                  <RouterLink
-                    key={item.id}
-                    to={item.route}
-                    text={item.label}
-                    icon={item.icon}
-                  />
-                )
-              );
-            } else {
-              return (
+            return (
+              isAuthenticated && (
                 <RouterLink
                   key={item.id}
                   to={item.route}
                   text={item.label}
                   icon={item.icon}
                 />
-              );
-            }
+              )
+            );
           })}
         </List>
       </Drawer>

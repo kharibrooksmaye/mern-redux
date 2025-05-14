@@ -1,5 +1,6 @@
 import express from "express";
 import { compute_v1, google } from "googleapis";
+import { PubSub, Message } from "@google-cloud/pubsub";
 import TransloaditClient from "transloadit";
 
 const router = express.Router();
@@ -21,6 +22,8 @@ const transloadit = new TransloaditClient({
   authSecret: process.env.TRANSLOADIT_SECRET,
 });
 const compute = google.compute({ version: "v1" });
+
+const pubSubClient = new PubSub();
 
 const auth = new google.auth.GoogleAuth();
 
@@ -72,10 +75,42 @@ const options = {
   },
 };
 
+router.get("/messages", async (req, res) => {
+  try {
+    const subscription = await pubSubClient.subscription(
+      "mern-redux-topic-sub"
+    );
+
+    res.writeHead(200, {
+      Connection: "keep-alive",
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Access-Control-Allow-Origin": "*",
+    });
+    let messageCount = 0;
+    const messageHandler = (message: Message) => {
+      messageCount++;
+      res.write("event: message\n");
+      res.write(`data: ${message.data.toString()} \n\n`);
+      res.write(`attributes: ${JSON.stringify(message.attributes)} \n\n`);
+      console.log(`Received message: ${message.id}`);
+      console.log(`Data: ${message.data}`);
+      console.log(`Attributes: ${message.attributes}`);
+      message.ack();
+    };
+    subscription.on("message", messageHandler);
+    setTimeout(() => {
+      subscription.close();
+      console.log("Subscription closed");
+      console.log(`Received ${messageCount} messages`);
+    }, 10000);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
 router.get("/event", async (req, res) => {
   try {
-    let vmData = [];
-    let assemData = [];
     const tasksData = await tasks();
     res.writeHead(200, {
       Connection: "keep-alive",
@@ -86,7 +121,7 @@ router.get("/event", async (req, res) => {
     const data = {
       tasks: tasksData,
     };
-    console.log(data);
+    console.log(data, "thisis the data");
     res.flushHeaders();
     let eventInterval = setInterval(async () => {
       if (Object.keys(data.tasks).length > 0) {

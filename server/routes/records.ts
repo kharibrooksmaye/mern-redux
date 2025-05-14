@@ -69,6 +69,8 @@ const publishMessage = async (data) => {
       .topic("mern-redux-topic")
       .publishMessage({ data: dataBuffer });
     console.log(`Message ${messageId} published`);
+
+    return messageId;
   } catch (error) {
     console.error(`Received error while publishing: ${error.message}`);
   }
@@ -279,10 +281,11 @@ router.post("/task", async (req, res) => {
     const data = await vms();
     const running = data.filter((vm) => vm.status === "RUNNING");
     console.log(running.length);
-    if (running && running.length < 5) {
-      await publishMessage(task);
-    }
-    res.status(200).send("Uploaded Specimens");
+    const publishedMessage = await publishMessage(task);
+    res.status(200).json({
+      message: "Task published",
+      messageId: publishedMessage,
+    });
   } catch (error) {
     console.log(error);
 

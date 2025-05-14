@@ -22,6 +22,7 @@ import {
   Memory,
   PlayCircle,
   StopCircle,
+  Task,
 } from "@mui/icons-material";
 import { compute_v1 } from "googleapis";
 import DocUpload from "../Components/Upload";
@@ -66,7 +67,6 @@ const Demo = () => {
       console.error("Error creating record:", error);
     }
   };
-
   const getAssemblyStatus = async () => {
     if (!assemblyUrl) return;
     try {
@@ -91,20 +91,23 @@ const Demo = () => {
       task
     );
 
+    // const subscription = pubsubClient.topic('mern-redux-topic').subscription(
+    //   "mern-redux-subscription"
+    // ).
+
     console.log("Task created successfully:", data.data);
 
     const eventSource = new EventSource(
-      "http://localhost:5000/api/admin/event/"
+      "http://localhost:5000/api/admin/messages/"
     );
 
+    const dataArray = [];
     eventSource.onmessage = (event) => {
+      console.log(event);
       const data = JSON.parse(event.data);
       console.log("Event data:", data);
-      if (data.tasks) {
-        const taskData = data.tasks[0];
-        console.log("Task data:", taskData);
-        setTaskData(taskData);
-      }
+      dataArray.push(data);
+      setTaskData(dataArray);
     };
 
     eventSource.onerror = (error) => {
@@ -137,6 +140,15 @@ const Demo = () => {
       console.error("Error getting status:", error);
       setLoading(false);
     }
+  };
+
+  const loadTopics = async () => {
+    console.log("loading topics");
+    // const pubSubClient = new PubSub();
+    // const topics = await pubSubClient.getTopics();
+    // console.log("Topics:", topics);
+    // const topic = pubSubClient.topic("mern-redux-topic");
+    // console.log("Topic:", topic);
   };
 
   const GetStarted = () => {
@@ -210,6 +222,17 @@ const Demo = () => {
       </Box>
     );
   };
+
+  const ViewPipeline = () => {
+    return (
+      <Box sx={{ padding: 2 }}>
+        <Typography variant="h6">View Pipeline</Typography>
+        <Typography variant="body1">
+          This is where you can view the pipeline status and details.
+        </Typography>
+      </Box>
+    );
+  };
   const DemoUpload = () => {
     return (
       <Box sx={{ padding: 2 }}>
@@ -225,26 +248,55 @@ const Demo = () => {
       </Box>
     );
   };
+
+  const TaskViews = () => {
+    return (
+      <Box sx={{ padding: 2 }}>
+        <Typography variant="h6">Task Views</Typography>
+        <Typography variant="body1">
+          This is where you can view the task status and details.
+        </Typography>
+        {taskData &&
+          taskData.map((task: any, index: number) => (
+            <Card key={index} sx={{ margin: 2 }}>
+              <CardContent>
+                <Typography variant="h6">{task.id}</Typography>
+                <Typography variant="body1">Status: {task.userid}</Typography>
+                <Typography variant="body1">Created: {task.fields}</Typography>
+                <Typography variant="body1">
+                  Duration: {task.duration}
+                </Typography>
+              </CardContent>
+            </Card>
+          ))}
+      </Box>
+    );
+  };
   const steps = [
     {
       label: "upload specimens",
       component: <DemoUpload />,
+      completed: false,
     },
     {
       label: "create assembly",
       component: <ViewAssembly />,
+      completed: false,
     },
     {
       label: "run cloud function",
-      component: <Box>{taskData}</Box>,
+      component: <TaskViews />,
+      completed: false,
     },
     {
       label: "trigger pub/sub",
       component: <Box>Trigger</Box>,
+      completed: false,
     },
     {
       label: "create/start virtual machine",
       component: <Box>Start</Box>,
+      completed: false,
     },
   ];
 
@@ -273,6 +325,9 @@ const Demo = () => {
     }
     if (steps[activeStep].label === "run cloud function") {
       createTask();
+    }
+    if (steps[activeStep].label === "trigger pub/sub") {
+      loadTopics();
     }
   }, [activeStep]);
   useEffect(() => {
