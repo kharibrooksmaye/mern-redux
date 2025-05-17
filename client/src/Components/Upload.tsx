@@ -6,12 +6,13 @@ import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
 import { Record } from "../@types/record";
 import { Navigate, useMatch, useNavigate, useParams } from "react-router";
-import { Box, Button, CircularProgress } from "@mui/material";
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { Dashboard } from "@uppy/react";
 import { Link } from "react-router-dom";
 import { Auth } from "../@types/auth";
 import { AuthContext } from "../context/AuthContext";
 import { useAuth } from "../hooks/useAuth";
+import { Check, CheckCircle } from "@mui/icons-material";
 
 interface Specimen {
   user_id: string;
@@ -28,6 +29,9 @@ interface DocUploadProps {
   demo: boolean;
   handleNext?: Function;
   setAssemblyUrl?: Function;
+  markAsComplete?: Function;
+  activeStep?: number;
+  markedAsComplete?: boolean;
 }
 const DocUpload = ({
   record,
@@ -37,6 +41,9 @@ const DocUpload = ({
   demo,
   handleNext,
   setAssemblyUrl,
+  markAsComplete,
+  markedAsComplete,
+  activeStep,
 }: DocUploadProps) => {
   const [uppy] = useState(() =>
     new Uppy({
@@ -106,8 +113,8 @@ const DocUpload = ({
         setUploaded(true);
         if (!demo) {
           navigate("/samples");
-        } else {
-          handleNext && handleNext();
+        } else if (markAsComplete && !markedAsComplete) {
+          markAsComplete(activeStep);
         }
       }
       !demo && setToggleUpload(!toggleUpload);
@@ -221,26 +228,38 @@ const DocUpload = ({
                 </Button>
               </>
             )}
-            {record && !visible && record.specimens.length > 0 && (
-              <>
-                <Button
-                  onClick={() => setVisible(!visible)}
-                  variant="contained"
-                  color="success"
-                  sx={{ mt: 3, mb: 3, mr: 3 }}
-                >
-                  Upload More
-                </Button>
-                <Button
-                  onClick={() => finish()}
-                  variant="contained"
-                  color="warning"
-                  sx={{ mt: 3, mb: 3 }}
-                >
-                  Finish
-                </Button>
-              </>
-            )}
+            {record &&
+              !visible &&
+              record.specimens.length > 0 &&
+              !markedAsComplete && (
+                <>
+                  <Button
+                    onClick={() => setVisible(!visible)}
+                    variant="contained"
+                    color="success"
+                    sx={{ mt: 3, mb: 3, mr: 3 }}
+                  >
+                    Upload More
+                  </Button>
+                  <Button
+                    onClick={() => finish()}
+                    variant="contained"
+                    color="warning"
+                    sx={{ mt: 3, mb: 3 }}
+                  >
+                    Finish
+                  </Button>
+                </>
+              )}
+            {record &&
+              record.specimens.length > 0 &&
+              !visible &&
+              markedAsComplete && (
+                <>
+                  <Typography>Upload Complete</Typography>
+                  <CheckCircle />
+                </>
+              )}
           </Box>
           {visible && (
             <Dashboard

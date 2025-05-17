@@ -17,13 +17,7 @@ import {
   StepContent,
 } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
-import {
-  CheckCircle,
-  Memory,
-  PlayCircle,
-  StopCircle,
-  Task,
-} from "@mui/icons-material";
+import { CheckCircle } from "@mui/icons-material";
 import { compute_v1 } from "googleapis";
 import DocUpload from "../Components/Upload";
 import { Record } from "../@types/record";
@@ -34,6 +28,19 @@ interface NetworkResourceObject {
   name: string;
   status: string;
   type: string;
+}
+
+enum ComponentLabel {
+  UPLOAD = "upload",
+  ASSEMBLY = "assembly",
+  CLOUD = "cloud",
+  PUBSUB = "pubsub",
+  VM = "vm",
+}
+interface StepType {
+  label: string;
+  componentLabel: ComponentLabel;
+  completed: boolean;
 }
 const Demo = () => {
   const [loading, setLoading] = useState(false);
@@ -51,8 +58,36 @@ const Demo = () => {
   >(null);
   const [activeStep, setActiveStep] = useState(0);
   const [record, setRecord] = useState<Record | null>(null);
-  const [toggleUpload, setToggleUpload] = useState(true);
+  const [markedAsComplete, setMarkedAsComplete] = useState(false);
   const [getStarted, setGetStarted] = useState(false);
+
+  const [steps, setSteps] = useState<StepType[]>([
+    {
+      label: "upload specimens",
+      componentLabel: ComponentLabel.UPLOAD,
+      completed: false,
+    },
+    {
+      label: "create assembly",
+      componentLabel: ComponentLabel.ASSEMBLY,
+      completed: false,
+    },
+    {
+      label: "run cloud function",
+      componentLabel: ComponentLabel.CLOUD,
+      completed: false,
+    },
+    {
+      label: "trigger pub/sub",
+      componentLabel: ComponentLabel.PUBSUB,
+      completed: false,
+    },
+    {
+      label: "create/start virtual machine",
+      componentLabel: ComponentLabel.VM,
+      completed: false,
+    },
+  ]);
 
   const createRecord = async () => {
     if (!import.meta.env.VITE_DEMO_USER_ID) return;
@@ -74,6 +109,13 @@ const Demo = () => {
       const assemblyResult = response.data as AssemblyResponse;
       setCurrentAssembly(assemblyResult);
       console.log("Assembly result:", assemblyResult);
+      if (assemblyResult.ok === "ASSEMBLY_COMPLETED") {
+        setSteps((prevSteps) => {
+          const updatedSteps = [...prevSteps];
+          updatedSteps[1].completed = true;
+          return updatedSteps;
+        });
+      }
     } catch (error) {
       console.error("Error getting assembly status:", error);
     }
@@ -244,6 +286,9 @@ const Demo = () => {
           setToggleUpload={setGetStarted}
           handleNext={handleNext}
           setAssemblyUrl={setAssemblyUrl}
+          markAsComplete={markAsComplete}
+          activeStep={activeStep}
+          markedAsComplete={markedAsComplete}
         />
       </Box>
     );
@@ -272,33 +317,14 @@ const Demo = () => {
       </Box>
     );
   };
-  const steps = [
-    {
-      label: "upload specimens",
-      component: <DemoUpload />,
-      completed: false,
-    },
-    {
-      label: "create assembly",
-      component: <ViewAssembly />,
-      completed: false,
-    },
-    {
-      label: "run cloud function",
-      component: <TaskViews />,
-      completed: false,
-    },
-    {
-      label: "trigger pub/sub",
-      component: <Box>Trigger</Box>,
-      completed: false,
-    },
-    {
-      label: "create/start virtual machine",
-      component: <Box>Start</Box>,
-      completed: false,
-    },
-  ];
+
+  const componentMap = {
+    upload: <DemoUpload />,
+    assembly: <ViewAssembly />,
+    cloud: <TaskViews />,
+    pubsub: <TaskViews />,
+    vm: <TaskViews />,
+  };
 
   const filterStatus = () => {
     if (VMs) {
@@ -340,6 +366,13 @@ const Demo = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
+  const markAsComplete = (index: number) => {
+    const updatedSteps = [...steps];
+    updatedSteps[index].completed = true;
+    setSteps(updatedSteps);
+    setActiveStep(index);
+    setMarkedAsComplete(true);
+  };
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
@@ -360,7 +393,7 @@ const Demo = () => {
             ) : (
               <>
                 <Stepper activeStep={activeStep}>
-                  {steps.map(({ component, label }, index) => (
+                  {steps.map(({ label }, index) => (
                     <Step key={index}>
                       <StepLabel
                         sx={{
@@ -376,7 +409,7 @@ const Demo = () => {
                   <Box
                     sx={{ display: "flex", flexDirection: "column", flex: 1 }}
                   >
-                    {steps[activeStep].component}
+                    {componentMap[steps[activeStep].componentLabel]}
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
@@ -384,14 +417,18 @@ const Demo = () => {
                     <Button
                       color="inherit"
                       variant="contained"
-                      disabled={activeStep === 0}
+                      disabled={activeStep === 0 && getStarted}
                       onClick={handleBack}
                       sx={{ mr: 1 }}
                     >
                       Back
                     </Button>
                     <Box sx={{ flex: "1 1 auto" }} />
-                    <Button onClick={handleNext} variant="contained">
+                    <Button
+                      onClick={handleNext}
+                      variant="contained"
+                      disabled={!steps[activeStep].completed}
+                    >
                       {activeStep === steps.length - 1 ? "Finish" : "Next"}
                     </Button>
                   </Box>
